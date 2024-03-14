@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">Memories</string>
+    <string name="default_web_client_id">71523733950-67u8m0h6vs6ag6s8a458dmbtbdqc77tr.apps.googleusercontent.com</string>
+    <string name="db_url">https://memories-4dcba-default-rtdb.asia-southeast1.firebasedatabase.app/</string>
+    <string name="storage_url">gs://memories-4dcba.appspot.com</string>
 </resources>

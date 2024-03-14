@@ -2,8 +2,9 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="grey">#F5F5F5</color>
     <color name="primary_button">#C35656</color>
-    <color name="light_primary">#E1A8A8</color>
-    <color name="silver_primary">#D18F8F</color>
+    <color name="light_primary">#ECCBCB</color>
+    <color name="silver_primary">#EAB8B8</color>
     <color name="border">#E5E5E5</color>
 </resources>
