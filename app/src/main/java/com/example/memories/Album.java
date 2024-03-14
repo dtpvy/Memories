@@ -1,8 +1,12 @@
 package com.example.memories;
 
+import java.util.Map;
+
 public class Album {
-    private String imgUrl;
     private String name;
+    private String userId;
+    private String imgUrl;
+    private Map<String, Photo> photos;
 
     public Album(String imgUrl, String name) {
         this.name = name;

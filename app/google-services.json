@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "71523733950",
+    "firebase_url": "https://memories-4dcba-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "memories-4dcba",
+    "storage_bucket": "memories-4dcba.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:71523733950:android:3544d806bb95861ff4a9ef",
+        "android_client_info": {
+          "package_name": "com.example.memories"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "71523733950-67u8m0h6vs6ag6s8a458dmbtbdqc77tr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.memories",
+            "certificate_hash": "19d69e99506a73814464cf23139287760321b678"
+          }
+        },
+        {
+          "client_id": "71523733950-te3cepku8nl32spkdco9gu34bgmoildm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWSU3A9yDVMlEmKPlvuALKlsr_Ti4mexM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "71523733950-te3cepku8nl32spkdco9gu34bgmoildm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
