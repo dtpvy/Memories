@@ -1,6 +1,7 @@
 package com.example.memories;
 
 import java.util.Date;
+import java.util.UUID;
 
 public class History {
     private String id;
@@ -11,6 +12,7 @@ public class History {
     public History() {};
 
     public History(String userId, Date date, String deviceId) {
+        this.id = UUID.randomUUID().toString();
         this.date = date;
         this.deviceId = deviceId;
         this.userId = userId;

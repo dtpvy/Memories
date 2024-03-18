@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
+    android:paddingBottom="4dp"
     tools:layout_editor_absoluteX="1dp"
     tools:layout_editor_absoluteY="1dp">
 
@@ -14,7 +15,8 @@
         android:layout_height="wrap_content"
         android:text="TextView"
         android:paddingHorizontal="16dp"
-        android:paddingVertical="4dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="2dp"
         android:textSize="18dp"/>
 
     <androidx.recyclerview.widget.RecyclerView

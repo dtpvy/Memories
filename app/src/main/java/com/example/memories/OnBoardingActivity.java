@@ -43,6 +43,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class OnBoardingActivity extends AppCompatActivity {
@@ -52,7 +53,7 @@ public class OnBoardingActivity extends AppCompatActivity {
             "Welcome aboard! With Memories, your photos are about to get a stunning makeover. Let's start editing!"
     };
     int[] stepImages = { R.drawable.onboarding2, R.drawable.onboarding1, R.drawable.onboarding3};
-    int step = 0;
+    int step = 0, fileNumber;
     ImageView imgDescription;
     TextView description;
     Button prevBtn, nextBtn;
@@ -61,11 +62,12 @@ public class OnBoardingActivity extends AppCompatActivity {
     String imageEncoded;
     List<String> imagesEncodedList;
     FirebaseStorage storage;
-    FirebaseAuth auth;
-    FirebaseUser user;
+    User user;
     FirebaseFirestore db;
     History history;
     String deviceId;
+    Album defaultAlbum;
+    ArrayList<Photo> photos = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,8 +76,7 @@ public class OnBoardingActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
-        auth = FirebaseAuth.getInstance();
-        user = auth.getCurrentUser();
+        user = new User().getUser(this);
         deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
 
         description = findViewById(R.id.description);
@@ -184,12 +185,11 @@ public class OnBoardingActivity extends AppCompatActivity {
                     }
                 }
             }
+            fileNumber = imagesEncodedList.size();
             addHistoryData();
-            System.out.println(imagesEncodedList.size());
             for (int i = 0; i < imagesEncodedList.size(); i++) {
                 uploadFile(imagesEncodedList.get(i));
             }
-            syncSuccess();
         } catch (Exception e) {
             System.out.println(e.getMessage());
             Toast.makeText(this, "Something went wrong", Toast.LENGTH_LONG).show();
@@ -203,23 +203,28 @@ public class OnBoardingActivity extends AppCompatActivity {
         return file.getName();
     }
 
-    public void syncPhotoData(String url) {
-        System.out.println(url);
+    public void setupAlbum() {
+        CollectionReference dbAlbum = db.collection("albums");
         CollectionReference dbPhoto = db.collection("photos");
-        Photo newPhoto = new Photo(user.getUid(), url, history.getDate(), history.getId());
-        dbPhoto.add(newPhoto).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-            @Override
-            public void onSuccess(DocumentReference documentReference) {
-                newPhoto.setId(documentReference.getId());
-                documentReference.set(newPhoto);
-            }
-        });
+        CollectionReference dbUser = db.collection("users");
+
+        Album privateAlbum = new Album(user.getId(), getString(R.string.private_img), "Bảo mật", false);
+        Album favouriteAlbum = new Album(user.getId(), getString(R.string.favourite_img), "Yêu thích", false );
+        dbAlbum.document(defaultAlbum.getId()).set(defaultAlbum);
+        dbAlbum.document(privateAlbum.getId()).set(privateAlbum);
+        dbAlbum.document(favouriteAlbum.getId()).set(favouriteAlbum);
+        dbAlbum.document(defaultAlbum.getId()).update("photos", photos);
+
+        user.setDefaultAlbum(defaultAlbum);
+        user.setFavouriteAlbum(favouriteAlbum);
+        user.setPrivateAlbum(privateAlbum);
+        user.setOnBoarding(true);
+        dbUser.document(user.getId()).set(user);
     }
 
     public void syncSuccess() {
         if (user == null) return;
-        CollectionReference dbUser = db.collection("users");
-        dbUser.document(user.getUid()).update("onBoarding", true);
+        setupAlbum();
 
         Toast.makeText(this, "Upload photos successfully!", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(OnBoardingActivity.this, HomeActivity.class);
@@ -230,34 +235,38 @@ public class OnBoardingActivity extends AppCompatActivity {
 
     public void addHistoryData() {
         if (user == null) return;
+        defaultAlbum = new Album(user.getId());
+
         CollectionReference dbHistory = db.collection("histories");
-        History newHistory = new History(user.getUid(), new Date(), deviceId);
-        dbHistory.add(newHistory).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-            @Override
-            public void onSuccess(DocumentReference documentReference) {
-                newHistory.setId(documentReference.getId());
-                documentReference.set(newHistory);
-                history = newHistory;
-            }
-        });
+        History newHistory = new History(user.getId(), new Date(), deviceId);
+        dbHistory.document(newHistory.getId()).set(newHistory);
+        history = newHistory;
     }
 
     public void uploadFile(String path) throws FileNotFoundException {
         StorageReference storageRef = storage.getReference();
+        CollectionReference dbPhoto = db.collection("photos");
 
         UUID uuid = UUID.randomUUID();
-        String childPath = user.getUid() + "/" + uuid.toString() + "-" + getName(path);
+        String childPath = user.getId() + "/" + uuid.toString() + "-" + getName(path);
         StorageReference mountainsRef = storageRef.child(childPath);
 
         InputStream stream = new FileInputStream(new File(path));
         UploadTask uploadTask = mountainsRef.putStream(stream);
+
+        Photo newPhoto = new Photo(user.getId(), history.getDate(), history.getId());
         uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                 taskSnapshot.getMetadata().getReference().getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                     @Override
                     public void onSuccess(Uri uri) {
-                        syncPhotoData(uri.toString());
+                        newPhoto.setImgUrl(uri.toString());
+                        dbPhoto.document(newPhoto.getId()).set(newPhoto);
+                        photos.add(newPhoto);
+                        if (photos.size() == fileNumber) {
+                            syncSuccess();
+                        }
                     }
                 });
             }

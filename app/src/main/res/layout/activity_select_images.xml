@@ -6,22 +6,32 @@
     android:layout_height="match_parent"
     tools:context=".SelectImagesActivity">
 
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
-
-        <TextView
-            android:id="@+id/textView3"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Album Name"
-            android:textSize="20dp"
-            android:textStyle="bold"
-            android:paddingTop="20dp"
-            android:textAlignment="center"
-            android:paddingBottom="10dp" />
+            android:orientation="horizontal"
+            android:paddingVertical="10dp"
+            android:paddingHorizontal="20dp"
+            android:gravity="center">
+            <TextView
+                android:id="@+id/albumName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Album Name"
+                android:textSize="20dp"
+                android:textStyle="bold" />
+            <Button
+                android:id="@+id/doneBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hoàn thành"
+                android:backgroundTint="@color/primary_button" />
+        </LinearLayout>
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
@@ -85,7 +95,7 @@
                 app:cardCornerRadius="8dp">
 
                 <Spinner
-                    android:id="@+id/spinner"
+                    android:id="@+id/albumList"
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
                     android:background="@color/primary_button"
