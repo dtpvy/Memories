@@ -11,12 +11,16 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/thumbnail_card"
+        app:cardBackgroundColor="@color/dark_grey"
+        app:contentPadding="1dp"
         app:cardCornerRadius="8dp">
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/photoHome"
+            android:background="@color/white"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            app:srcCompat="@drawable/stockphoto"
             android:adjustViewBounds="true"/>
 
     </androidx.cardview.widget.CardView>

@@ -14,13 +14,13 @@ import com.bumptech.glide.Glide;
 import java.util.ArrayList;
 
 public class PhotoHomeAdapter extends RecyclerView.Adapter<PhotoHomeAdapter.ViewHolder> {
-    ArrayList<String> images;
+    ArrayList<Photo> photos;
     Context context;
 
     // Constructor for initialization
-    public PhotoHomeAdapter(Context context, ArrayList<String> images) {
+    public PhotoHomeAdapter(Context context, ArrayList<Photo> photos) {
         this.context = context;
-        this.images = images;
+        this.photos = photos;
     }
 
     @NonNull
@@ -32,13 +32,13 @@ public class PhotoHomeAdapter extends RecyclerView.Adapter<PhotoHomeAdapter.View
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        String imageUrl = images.get(position);
+        String imageUrl = photos.get(position).getImgUrl();
         Glide.with(holder.image.getContext()).load(imageUrl).into(holder.image);
     }
 
     @Override
     public int getItemCount() {
-        return images.size();
+        return photos.size();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {

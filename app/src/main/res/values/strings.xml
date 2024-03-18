@@ -3,4 +3,8 @@
     <string name="default_web_client_id">71523733950-67u8m0h6vs6ag6s8a458dmbtbdqc77tr.apps.googleusercontent.com</string>
     <string name="db_url">https://memories-4dcba-default-rtdb.asia-southeast1.firebasedatabase.app/</string>
     <string name="storage_url">gs://memories-4dcba.appspot.com</string>
+    <string name="favourite_img">https://firebasestorage.googleapis.com/v0/b/memories-4dcba.appspot.com/o/favourite_14390.png?alt=media&amp;token=6e80f5d6-bfb4-4e7e-b7a2-dd942e768f51</string>
+    <string name="private_img">https://firebasestorage.googleapis.com/v0/b/memories-4dcba.appspot.com/o/unnamed.png?alt=media&amp;token=11d00ce1-2aea-4034-aa1b-87ef853d5ded</string>
+    <string name="empty_img">https://firebasestorage.googleapis.com/v0/b/memories-4dcba.appspot.com/o/istockphoto-1147544807-612x612.jpg?alt=media&amp;token=afe12771-dfd7-4843-932e-83b6b22e6ced</string>
+    <string name="current_user">current_user</string>
 </resources>

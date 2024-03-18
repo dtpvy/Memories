@@ -1,6 +1,8 @@
 
 package com.example.memories;
 
+import android.content.Context;
+import android.content.Intent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -15,6 +17,7 @@ import java.util.ArrayList;
 
 public class AlbumHomeAdapter extends RecyclerView.Adapter<AlbumHomeAdapter.MyView> {
     private ArrayList<Album> list;
+    private Context context;
     public class MyView extends RecyclerView.ViewHolder {
         TextView textView;
         ImageView imageView;
@@ -27,7 +30,8 @@ public class AlbumHomeAdapter extends RecyclerView.Adapter<AlbumHomeAdapter.MyVi
         }
     }
 
-    public AlbumHomeAdapter(ArrayList<Album> horizontalList) {
+    public AlbumHomeAdapter(Context context, ArrayList<Album> horizontalList) {
+        this.context = context;
         this.list = horizontalList;
     }
 
@@ -42,6 +46,14 @@ public class AlbumHomeAdapter extends RecyclerView.Adapter<AlbumHomeAdapter.MyVi
         holder.textView.setText(list.get(position).getName());
         String imageUrl = list.get(position).getImgUrl();
         Glide.with(holder.imageView).load(imageUrl).into(holder.imageView);
+        holder.imageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(context, PhotoActivity.class);
+                intent.putExtra("album_id", list.get(holder.getAdapterPosition()).getId());
+                context.startActivity(intent);
+            }
+        });
     }
 
     @Override

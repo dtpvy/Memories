@@ -7,7 +7,9 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -121,9 +123,11 @@ public class MainActivity extends AppCompatActivity {
                     User newUser = new User(user.getUid(), user.getDisplayName(), user.getEmail());
                     dbUser.document(newUser.getId()).set(newUser);
                     onBoarding = newUser.getOnBoarding();
+                    newUser.saveUser(MainActivity.this);
                 } else {
                     User user = documentSnapshot.toObject(User.class);
                     onBoarding = user.getOnBoarding();
+                    user.saveUser(MainActivity.this);
                 }
                 Toast.makeText(MainActivity.this, "Signed in successfully!", Toast.LENGTH_SHORT).show();
 

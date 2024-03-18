@@ -25,7 +25,7 @@
         <TextView
             android:id="@+id/description"
             android:layout_width="match_parent"
-            android:layout_height="140dp"
+            android:layout_height="130dp"
             android:textSize="18dp"
             android:textAlignment="center"
             android:padding="20dp"

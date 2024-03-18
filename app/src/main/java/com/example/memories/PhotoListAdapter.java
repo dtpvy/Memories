@@ -19,7 +19,9 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class PhotoListAdapter extends ArrayAdapter<PhotoList> {
     private final Context context;
@@ -54,7 +56,11 @@ public class PhotoListAdapter extends ArrayAdapter<PhotoList> {
         photosView.addItemDecoration(new SpacesItemDecoration(16));
         photosView.setLayoutManager(gridLayoutManager);
 
-        dateText.setText(photoLists.get(position).getDate().toString());
+        Locale locale = new Locale("vi", "VN");
+        DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.DEFAULT, locale);
+        String date = dateFormat.format(photoLists.get(position).getDate());
+        dateText.setText(date);
+
         PhotoAdapter photoAdapter = new PhotoAdapter(photoLists.get(position).getPhotos());
         photosView.setAdapter(photoAdapter);
 

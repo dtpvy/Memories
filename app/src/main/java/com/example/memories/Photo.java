@@ -1,6 +1,7 @@
 package com.example.memories;
 
 import java.util.Date;
+import java.util.UUID;
 
 public class Photo {
     private String id;
@@ -8,17 +9,27 @@ public class Photo {
     private String imgUrl;
     private Date createdAt;
     private String historyId;
+    private Date deletedAt;
 
     public Photo() {}
 
     public Photo(String userId, String imgUrl, Date createdAt, String historyId) {
+        this.id = UUID.randomUUID().toString();
         this.userId = userId;
         this.historyId = historyId;
         this.imgUrl = imgUrl;
         this.createdAt = createdAt;
     }
 
+    public Photo(String userId, Date createdAt, String historyId) {
+        this.id = UUID.randomUUID().toString();
+        this.userId = userId;
+        this.historyId = historyId;
+        this.createdAt = createdAt;
+    }
+
     public Photo(String imgUrl, Date createdAt) {
+        this.id = UUID.randomUUID().toString();
         this.imgUrl = imgUrl;
         this.createdAt = createdAt;
     }
@@ -62,4 +73,8 @@ public class Photo {
     public void setUserId(String userId) {
         this.userId = userId;
     }
+
+    public void setDeletedAt(Date date) {this.deletedAt = date; }
+
+    public Date getDeletedAt() { return this.deletedAt; }
 }

@@ -1,10 +1,18 @@
 package com.example.memories;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+
+import com.google.gson.Gson;
+
 public class User {
     private String id;
     private String name;
     private Boolean onBoarding;
     private String email;
+    private Album defaultAlbum;
+    private Album privateAlbum;
+    private Album favouriteAlbum;
 
     public User() {}
 
@@ -49,4 +57,46 @@ public class User {
     }
 
     public void setOnBoarding(Boolean onBoarding) { this.onBoarding = onBoarding; }
+
+    public Album getDefaultAlbum() {
+        return defaultAlbum;
+    }
+
+    public Album getFavouriteAlbum() {
+        return favouriteAlbum;
+    }
+
+    public Album getPrivateAlbum() {
+        return privateAlbum;
+    }
+
+    public void setDefaultAlbum(Album defaultAlbum) {
+        this.defaultAlbum = defaultAlbum;
+    }
+
+    public void setFavouriteAlbum(Album favouriteAlbum) {
+        this.favouriteAlbum = favouriteAlbum;
+    }
+
+    public void setPrivateAlbum(Album privateAlbum) {
+        this.privateAlbum = privateAlbum;
+    }
+
+    public void saveUser(Context content) {
+        SharedPreferences sharedPref = content.getSharedPreferences("current_user", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+
+        Gson gson = new Gson();
+        String json = gson.toJson(this);
+        editor.putString("current_user", json);
+        editor.apply();
+    }
+
+    public User getUser(Context content) {
+        SharedPreferences sharedPref = content.getSharedPreferences("current_user", Context.MODE_PRIVATE);
+        String data = sharedPref.getString("current_user", "");
+        Gson gson = new Gson();
+        User user = gson.fromJson(data, User.class);
+        return user;
+    }
 }
