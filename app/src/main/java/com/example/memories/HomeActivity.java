@@ -35,12 +35,15 @@ import java.util.ArrayList;
 public class HomeActivity extends AppCompatActivity {
     ArrayList<DiscoverHomeView> discovers = new ArrayList<>();
     ArrayList<Album> albums;
+    ArrayList<Photo> photos;
     ImageButton addButton, settingButton;
     Button seeAlbumButton;
     User user;
     FirebaseFirestore db;
     TextView totalPhoto;
     AlertDialog createAlbumDialog;
+    RecyclerView photosView, albumView;
+    PhotoHomeAdapter photoHomeAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +66,18 @@ public class HomeActivity extends AppCompatActivity {
         discoverView.setLayoutManager(layoutManager);
         DiscoverHomeAdapter discoverHomeAdapter = new DiscoverHomeAdapter(discovers);
         discoverView.setAdapter(discoverHomeAdapter);
+
+        photosView = (RecyclerView) findViewById(R.id.photosView);
+        StaggeredGridLayoutManager gridLayoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
+        gridLayoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS);
+        photosView.setLayoutManager(gridLayoutManager);
+        photoHomeAdapter = new PhotoHomeAdapter(HomeActivity.this);
+        photosView.setAdapter(photoHomeAdapter);
+
+        albumView = (RecyclerView) findViewById(R.id.albumView);
+        LinearLayoutManager albumLayoutManager = new LinearLayoutManager(this);
+        albumLayoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
+        albumView.setLayoutManager(albumLayoutManager);
 
         addButton = (ImageButton) findViewById(R.id.addButton);
         addButton.setOnClickListener(new View.OnClickListener() {
@@ -99,23 +114,17 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     public void getPhotos() {
-        RecyclerView photosView = (RecyclerView) findViewById(R.id.photosView);
-        StaggeredGridLayoutManager gridLayoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
-        gridLayoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS);
-        photosView.setLayoutManager(gridLayoutManager);
-        photosView.setHasFixedSize(true);
+        photos = new ArrayList<>();
         db.collection("photos").whereEqualTo("userId", user.getId()).whereEqualTo("deletedAt", null).get()
                 .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
                         if (task.isSuccessful()) {
-                            ArrayList<Photo> photos = new ArrayList<>();
                             for (QueryDocumentSnapshot document : task.getResult()) {
                                 Photo photo = document.toObject(Photo.class);
                                 photos.add(photo);
                             }
-                            PhotoHomeAdapter photoHomeAdapter = new PhotoHomeAdapter(HomeActivity.this, photos);
-                            photosView.setAdapter(photoHomeAdapter);
+                            photoHomeAdapter.setData(photos);
                             totalPhoto.setText(photos.size() + " photos");
                         }
                     }

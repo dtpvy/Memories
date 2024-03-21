@@ -24,7 +24,11 @@ public class SelectPhotoAdapter extends RecyclerView.Adapter<SelectPhotoAdapter.
     Context context;
     private Callback callback;
 
-    // Constructor for initialization
+    public SelectPhotoAdapter(Context context) {
+        this.context = context;
+        this.photos = new ArrayList<>();
+        this.selectedPhotos = new ArrayList<>();
+    }
     public SelectPhotoAdapter(Context context, ArrayList<Photo> photos) {
         this.context = context;
         this.photos = photos;
@@ -82,6 +86,14 @@ public class SelectPhotoAdapter extends RecyclerView.Adapter<SelectPhotoAdapter.
     @Override
     public int getItemCount() {
         return photos.size();
+    }
+
+    public void setPhotos(ArrayList<Photo> photos) {
+        this.photos = photos;
+    }
+
+    public void setSelectedPhotos(ArrayList<Photo> photos) {
+        this.selectedPhotos = filterPhotos(photos);
     }
 
     public void setCallback(Callback callback) {

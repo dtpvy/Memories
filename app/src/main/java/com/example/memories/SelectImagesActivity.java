@@ -68,7 +68,25 @@ public class SelectImagesActivity extends AppCompatActivity {
         StaggeredGridLayoutManager gridLayoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
         gridLayoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS);
         photosView.setLayoutManager(gridLayoutManager);
-        photosView.setHasFixedSize(true);
+        photoHomeAdapter = new SelectPhotoAdapter(SelectImagesActivity.this);
+        photoHomeAdapter.setCallback(new SelectPhotoAdapter.Callback() {
+            @Override
+            public void onCheckedChanged(Photo photo, Boolean checked) {
+                if (checked) {
+                    selectPhotos.add(photo);
+                } else {
+                    selectPhotos.remove(photo);
+                }
+                System.out.println(selectPhotos);
+            }
+
+            @Override
+            public void onCheckAll(ArrayList<Photo> photos) {
+                selectAll(photos.size() > 0);
+            }
+        });
+
+        photosView.setAdapter(photoHomeAdapter);
 
         loadAlbums();
         loadPhotos(user.getDefaultAlbum().getId());
@@ -141,25 +159,9 @@ public class SelectImagesActivity extends AppCompatActivity {
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                 Album album = documentSnapshot.toObject(Album.class);
                 currentAlbum = album;
-                photoHomeAdapter = new SelectPhotoAdapter(SelectImagesActivity.this, album.getPhotos(), selectPhotos);
-                photoHomeAdapter.setCallback(new SelectPhotoAdapter.Callback() {
-                    @Override
-                    public void onCheckedChanged(Photo photo, Boolean checked) {
-                        if (checked) {
-                            selectPhotos.add(photo);
-                        } else {
-                            selectPhotos.remove(photo);
-                        }
-                        System.out.println(selectPhotos);
-                    }
-
-                    @Override
-                    public void onCheckAll(ArrayList<Photo> photos) {
-                        selectAll(photos.size() > 0);
-                    }
-                });
-
-                photosView.setAdapter(photoHomeAdapter);
+                photoHomeAdapter.setPhotos(album.getPhotos());
+                photoHomeAdapter.setSelectedPhotos(selectPhotos);
+                photoHomeAdapter.notifyDataSetChanged();
             }
         });
     }

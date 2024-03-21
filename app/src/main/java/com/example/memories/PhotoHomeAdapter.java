@@ -17,7 +17,11 @@ public class PhotoHomeAdapter extends RecyclerView.Adapter<PhotoHomeAdapter.View
     ArrayList<Photo> photos;
     Context context;
 
-    // Constructor for initialization
+    public PhotoHomeAdapter(Context context) {
+        this.context = context;
+        this.photos = new ArrayList<>();
+    }
+
     public PhotoHomeAdapter(Context context, ArrayList<Photo> photos) {
         this.context = context;
         this.photos = photos;
@@ -30,10 +34,16 @@ public class PhotoHomeAdapter extends RecyclerView.Adapter<PhotoHomeAdapter.View
         return new ViewHolder(view);
     }
 
+    public void setData(ArrayList<Photo> photos) {
+        this.photos = photos;
+        notifyDataSetChanged();
+    }
+
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         String imageUrl = photos.get(position).getImgUrl();
-        Glide.with(holder.image.getContext()).load(imageUrl).into(holder.image);
+        System.out.println(imageUrl);
+        Glide.with(holder.image.getContext()).load(imageUrl).placeholder(R.drawable.stockphoto).into(holder.image);
     }
 
     @Override
