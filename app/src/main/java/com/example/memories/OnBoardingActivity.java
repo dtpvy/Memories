@@ -60,7 +60,7 @@ public class OnBoardingActivity extends AppCompatActivity {
     ArrayList<View> stepView = new ArrayList<>();
     int PICK_IMAGE_MULTIPLE = 1;
     String imageEncoded;
-    List<String> imagesEncodedList;
+    List<Uri> imagesEncodedList;
     FirebaseStorage storage;
     User user;
     FirebaseFirestore db;
@@ -123,23 +123,23 @@ public class OnBoardingActivity extends AppCompatActivity {
 
     public void syncImages() {
         AlertDialog dialog = new AlertDialog.Builder(this).setMessage("Do you want to sync images in your device to our system?")
-            .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    chooseImages();
-                    dialog.dismiss();
-                }
-            }).setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                }
-            }).setOnCancelListener(new DialogInterface.OnCancelListener() {
-                @Override
-                public void onCancel(DialogInterface dialog) {
-                    dialog.dismiss();
-                }
-            }).create();
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        chooseImages();
+                        dialog.dismiss();
+                    }
+                }).setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                }).setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(DialogInterface dialog) {
+                        dialog.dismiss();
+                    }
+                }).create();
         dialog.show();
     }
 
@@ -156,31 +156,17 @@ public class OnBoardingActivity extends AppCompatActivity {
         try {
             if (requestCode == PICK_IMAGE_MULTIPLE && resultCode == RESULT_OK && null != data) {
                 String[] filePathColumn = { MediaStore.Images.Media.DATA };
-                imagesEncodedList = new ArrayList<String>();
+                imagesEncodedList = new ArrayList<Uri>();
                 if (data.getData() != null){
-                    Uri mImageUri = data.getData();
-                    Cursor cursor = getContentResolver().query(mImageUri, filePathColumn, null, null, null);
-                    cursor.moveToFirst();
-
-                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                    imageEncoded  = cursor.getString(columnIndex);
-                    imagesEncodedList.add(imageEncoded);
-                    cursor.close();
+                    Uri uri = data.getData();
+                    imagesEncodedList.add(uri);
                 } else {
                     if (data.getClipData() != null) {
                         ClipData mClipData = data.getClipData();
-                        ArrayList<Uri> mArrayUri = new ArrayList<Uri>();
                         for (int i = 0; i < mClipData.getItemCount(); i++) {
                             ClipData.Item item = mClipData.getItemAt(i);
                             Uri uri = item.getUri();
-                            mArrayUri.add(uri);
-                            Cursor cursor = getContentResolver().query(uri, filePathColumn, null, null, null);
-                            cursor.moveToFirst();
-
-                            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                            imageEncoded  = cursor.getString(columnIndex);
-                            imagesEncodedList.add(imageEncoded);
-                            cursor.close();
+                            imagesEncodedList.add(uri);
                         }
                     }
                 }
@@ -196,6 +182,20 @@ public class OnBoardingActivity extends AppCompatActivity {
         }
 
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private String getRealPathFromURI(Uri contentURI) {
+        String result;
+        Cursor cursor = getContentResolver().query(contentURI, null, null, null, null);
+        if (cursor == null) { // Source is Dropbox or other similar local file path
+            result = contentURI.getPath();
+        } else {
+            cursor.moveToFirst();
+            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+            result = cursor.getString(idx);
+            cursor.close();
+        }
+        return result;
     }
 
     public String getName(String path) {
@@ -243,15 +243,15 @@ public class OnBoardingActivity extends AppCompatActivity {
         history = newHistory;
     }
 
-    public void uploadFile(String path) throws FileNotFoundException {
+    public void uploadFile(Uri uri) throws FileNotFoundException {
         StorageReference storageRef = storage.getReference();
         CollectionReference dbPhoto = db.collection("photos");
 
         UUID uuid = UUID.randomUUID();
-        String childPath = user.getId() + "/" + uuid.toString() + "-" + getName(path);
+        String childPath = user.getId() + "/" + uuid.toString() + "-" + getName(uri.getPath());
         StorageReference mountainsRef = storageRef.child(childPath);
 
-        InputStream stream = new FileInputStream(new File(path));
+        InputStream stream = getContentResolver().openInputStream(uri);
         UploadTask uploadTask = mountainsRef.putStream(stream);
 
         Photo newPhoto = new Photo(user.getId(), history.getDate(), history.getId());
