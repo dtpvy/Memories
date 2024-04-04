@@ -116,7 +116,6 @@ public class OnBoardingActivity extends AppCompatActivity {
     }
 
     public void syncImages() {
-<<<<<<< HEAD
         AlertDialog dialog = new AlertDialog.Builder(this).setMessage("Bạn có muốn đồng bộ hình ảnh trong thiết bị của bạn với hệ thống của chúng tôi không?")
             .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                 @Override
@@ -135,26 +134,6 @@ public class OnBoardingActivity extends AppCompatActivity {
                     dialog.dismiss();
                 }
             }).create();
-=======
-        AlertDialog dialog = new AlertDialog.Builder(this).setMessage("Do you want to sync images in your device to our system?")
-                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        chooseImages();
-                        dialog.dismiss();
-                    }
-                }).setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                }).setOnCancelListener(new DialogInterface.OnCancelListener() {
-                    @Override
-                    public void onCancel(DialogInterface dialog) {
-                        dialog.dismiss();
-                    }
-                }).create();
->>>>>>> main
         dialog.show();
     }
 
@@ -172,10 +151,6 @@ public class OnBoardingActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         try {
             if (requestCode == PICK_IMAGE_MULTIPLE && resultCode == RESULT_OK && null != data) {
-<<<<<<< HEAD
-=======
-                String[] filePathColumn = { MediaStore.Images.Media.DATA };
->>>>>>> main
                 imagesEncodedList = new ArrayList<Uri>();
                 if (data.getData() != null){
                     Uri uri = data.getData();
@@ -258,15 +233,12 @@ public class OnBoardingActivity extends AppCompatActivity {
         history = newHistory;
     }
 
-<<<<<<< HEAD
     public String getMimeType(Uri uri) {
         ContentResolver cR = getContentResolver();
         String mime = cR.getType(uri);
         return mime;
     }
 
-=======
->>>>>>> main
     public void uploadFile(Uri uri) throws FileNotFoundException {
         StorageReference storageRef = storage.getReference();
 
