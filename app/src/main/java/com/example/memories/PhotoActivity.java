@@ -3,12 +3,8 @@ package com.example.memories;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.core.app.NotificationCompat;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
@@ -20,8 +16,8 @@ import android.widget.Toast;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.gson.Gson;
@@ -37,22 +33,19 @@ import java.util.Optional;
 
 public class PhotoActivity extends AppCompatActivity {
     ArrayList<PhotoList> photoLists = new ArrayList<>();
-    ArrayList<Photo> selected = new ArrayList<>();
+    ArrayList<Media> selected = new ArrayList<>();
     Album album;
     ImageView backBtn, selectAllBtn;
-    TextView albumName;
-    FirebaseFirestore db;
+    TextView albumName, chooseText;
     User user;
     ListView listView;
     ConstraintLayout photoControl;
     LinearLayout addBtn, trashBtn, downBtn, restoreBtn, deleteBtn;
     Boolean isEdit = false;
     PhotoListAdapter photoListAdapter;
-    TextView chooseText;
     String albumId;
     ImageAction imageAction;
-    NotificationManager mNotifyManager;
-    NotificationCompat.Builder mBuilder;
+    CollectionReference dbAlbum, dbMedia;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,7 +54,10 @@ public class PhotoActivity extends AppCompatActivity {
 
         imageAction = new ImageAction(this);
 
-        db = FirebaseFirestore.getInstance();
+        Database db = new Database();
+        dbAlbum = db.getDbAlbum();
+        dbMedia = db.getDbMedia();
+
         user = new User().getUser(this);
         Intent intent = getIntent();
         albumId = intent.getStringExtra("album_id");
@@ -170,23 +166,23 @@ public class PhotoActivity extends AppCompatActivity {
 
     public void loadData(String albumId) {
         photoLists = new ArrayList<>();
-        Map<Date, ArrayList<Photo>> photos = new HashMap<>();;
-        db.collection("albums").document(albumId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+        Map<Date, ArrayList<Media>> photos = new HashMap<>();;
+        dbAlbum.document(albumId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                 album = documentSnapshot.toObject(Album.class);
                 albumName.setText(album.getName());
                 for (int i = 0; i < album.getPhotos().size(); i++) {
-                    Photo photo = album.getPhotos().get(i);
-                    if (photo.getDeletedAt() != null) continue;
-                    Date date = getDate(photo.getCreatedAt());
+                    Media media = album.getPhotos().get(i);
+                    if (media.getDeletedAt() != null) continue;
+                    Date date = getDate(media.getCreatedAt());
                     if (photos.get(date) == null) {
-                        ArrayList<Photo> arr = new ArrayList<>();
-                        arr.add(photo);
+                        ArrayList<Media> arr = new ArrayList<>();
+                        arr.add(media);
                         photos.put(date, arr);
                     } else {
-                        ArrayList<Photo> arr = photos.get(date);
-                        arr.add(photo);
+                        ArrayList<Media> arr = photos.get(date);
+                        arr.add(media);
                     }
                 }
                 List<Date> dates = new ArrayList<>(photos.keySet());
@@ -201,10 +197,10 @@ public class PhotoActivity extends AppCompatActivity {
                     public void onLongClick() {
                         onChangeMode(true);
                     }
-                    public void onChange(ArrayList<Photo> photos) {
-                        if (photos.size() > 0) chooseText.setText("Đã chọn " + photos.size());
+                    public void onChange(ArrayList<Media> media) {
+                        if (media.size() > 0) chooseText.setText("Đã chọn " + media.size());
                         else chooseText.setText("");
-                        selected = photos;
+                        selected = media;
                     }
                 });
                 listView.setAdapter(photoListAdapter);
@@ -214,22 +210,22 @@ public class PhotoActivity extends AppCompatActivity {
 
     public void loadTrash() {
         photoLists = new ArrayList<>();
-        Map<Date, ArrayList<Photo>> photos = new HashMap<>();;
+        Map<Date, ArrayList<Media>> photos = new HashMap<>();;
         albumName.setText("Thùng rác");
-        db.collection("photos").whereNotEqualTo("deletedAt", null).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+        dbMedia.whereNotEqualTo("deletedAt", null).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
                 if (task.isSuccessful()) {
                     for (QueryDocumentSnapshot queryDocumentSnapshot: task.getResult()) {
-                        Photo photo = queryDocumentSnapshot.toObject(Photo.class);
-                        Date date = getDate(photo.getCreatedAt());
+                        Media media = queryDocumentSnapshot.toObject(Media.class);
+                        Date date = getDate(media.getCreatedAt());
                         if (photos.get(date) == null) {
-                            ArrayList<Photo> arr = new ArrayList<>();
-                            arr.add(photo);
+                            ArrayList<Media> arr = new ArrayList<>();
+                            arr.add(media);
                             photos.put(date, arr);
                         } else {
-                            ArrayList<Photo> arr = photos.get(date);
-                            arr.add(photo);
+                            ArrayList<Media> arr = photos.get(date);
+                            arr.add(media);
                         }
                     }
                     List<Date> dates = new ArrayList<>(photos.keySet());
@@ -244,10 +240,10 @@ public class PhotoActivity extends AppCompatActivity {
                         public void onLongClick() {
                             onChangeMode(true);
                         }
-                        public void onChange(ArrayList<Photo> photos) {
-                            if (photos.size() > 0) chooseText.setText("Đã chọn " + photos.size());
+                        public void onChange(ArrayList<Media> media) {
+                            if (media.size() > 0) chooseText.setText("Đã chọn " + media.size());
                             else chooseText.setText("");
-                            selected = photos;
+                            selected = media;
                         }
                     });
                     listView.setAdapter(photoListAdapter);
@@ -269,39 +265,39 @@ public class PhotoActivity extends AppCompatActivity {
 
     public void removePhoto() {
         Date deletedAt = new Date();
-        ArrayList<Photo> aPhotos = album.getPhotos();
-        for (Photo photo: selected) {
-            int position = aPhotos.indexOf(photo);
+        ArrayList<Media> aMedia = album.getPhotos();
+        for (Media media : selected) {
+            int position = aMedia.indexOf(media);
             System.out.println(position);
-            aPhotos.get(position).setDeletedAt(deletedAt);
-            db.collection("photos").document(photo.getId()).update("deletedAt", deletedAt);
+            aMedia.get(position).setDeletedAt(deletedAt);
+            dbMedia.document(media.getId()).update("deletedAt", deletedAt);
         }
-        db.collection("albums").document(album.getId()).set(album);
+        dbAlbum.document(album.getId()).set(album);
         loadData(albumId);
         Toast.makeText(PhotoActivity.this, "Cập nhật thành công", Toast.LENGTH_SHORT).show();
     }
 
     public void trashPhoto(Boolean isRestore) {
         for (int i = 0; i < selected.size(); i++) {
-            Photo photo = selected.get(i);
+            Media media = selected.get(i);
             Boolean end = i+1 == selected.size();
-            db.collection("albums").whereEqualTo("userId", user.getId()).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            dbAlbum.whereEqualTo("userId", user.getId()).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                 @Override
                 public void onComplete(@NonNull Task<QuerySnapshot> task) {
                     if (task.isSuccessful()) {
                         for (QueryDocumentSnapshot queryDocumentSnapshot: task.getResult()) {
                             Album album = queryDocumentSnapshot.toObject(Album.class);
-                            Optional<Photo> ph = album.getPhotos().stream().filter(p -> p.getId().compareTo(photo.getId()) == 0).findFirst();
+                            Optional<Media> ph = album.getPhotos().stream().filter(p -> p.getId().compareTo(media.getId()) == 0).findFirst();
                             if (!ph.isPresent()) continue;
                             int position = album.getPhotos().indexOf(ph.get());
                             if (isRestore) {
                                 album.getPhotos().get(position).setDeletedAt(null);
-                                db.collection("albums").document(album.getId()).set(album);
-                                db.collection("photos").document(photo.getId()).update("deletedAt", null);
+                                dbAlbum.document(album.getId()).set(album);
+                                dbMedia.document(media.getId()).update("deletedAt", null);
                             } else {
                                 album.getPhotos().remove(position);
-                                db.collection("albums").document(album.getId()).set(album);
-                                db.collection("photos").document(photo.getId()).delete();
+                                dbAlbum.document(album.getId()).set(album);
+                                dbMedia.document(media.getId()).delete();
                             }
 
                             if (end) {

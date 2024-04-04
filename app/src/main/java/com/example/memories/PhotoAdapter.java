@@ -1,33 +1,32 @@
 package com.example.memories;
 
+import android.content.Context;
 import android.content.Intent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.view.LayoutInflater;
 
 import androidx.cardview.widget.CardView;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
 
 import java.util.ArrayList;
-import java.util.List;
-
-import javax.security.auth.callback.Callback;
 
 public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.MyView> {
-    private ArrayList<Photo> list;
+    private ArrayList<Media> list;
     private Boolean isHold = false;
     private Callback callback;
-    private ArrayList<Photo> selected;
+    private ArrayList<Media> selected;
+    private Context context;
 
     public class MyView extends RecyclerView.ViewHolder {
         ImageView imageView;
         CardView checkBox;
         ImageView checkImg;
+        ConstraintLayout video;
 
         public MyView(View view)
         {
@@ -35,17 +34,20 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.MyView> {
             imageView = (ImageView) view.findViewById(R.id.photoImage);
             checkBox = view.findViewById(R.id.checkBox);
             checkImg = view.findViewById(R.id.checkImage);
+            video = view.findViewById(R.id.video);
         }
     }
 
-    public PhotoAdapter(ArrayList<Photo> list) {
+    public PhotoAdapter(ArrayList<Media> list, Context context) {
         this.list = list;
         this.selected = new ArrayList<>();
+        this.context = context;
     }
 
-    public PhotoAdapter(ArrayList<Photo> list, ArrayList<Photo> selected) {
+    public PhotoAdapter(ArrayList<Media> list, ArrayList<Media> selected, Context context) {
         this.list = list;
         this.selected = selected;
+        this.context = context;
     }
 
     @Override
@@ -56,12 +58,14 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.MyView> {
 
     @Override
     public void onBindViewHolder(final MyView holder, final int position) {
-        String imageUrl = list.get(position).getImgUrl();
+        Media media = list.get(position);
+        String imageUrl = media.getImgUrl();
         Glide.with(holder.imageView).load(imageUrl).into(holder.imageView);
         Boolean isSelect = isSelect(position) >= 0;
 
         holder.checkImg.setVisibility(isSelect ? View.VISIBLE : View.INVISIBLE);
         holder.checkBox.setVisibility(isHold ? View.VISIBLE : View.INVISIBLE);
+        holder.video.setVisibility(media.getType().contains("video") ? View.VISIBLE : View.INVISIBLE);
 
         holder.checkBox.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -78,6 +82,19 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.MyView> {
                 return true;
             }
         });
+        holder.imageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Media _media = list.get(holder.getAdapterPosition());
+                if (_media.isVideo()) {
+
+                } else {
+                    Intent intent = new Intent(context, PhotoDetailActivity.class);
+                    intent.putExtra("media_id", _media.getId());
+                    context.startActivity(intent);
+                }
+            }
+        });
     }
 
     public int isSelect(int position) {
@@ -89,8 +106,8 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.MyView> {
         return -1;
     }
 
-    public void setSelected(ArrayList<Photo> photos) {
-        this.selected = photos;
+    public void setSelected(ArrayList<Media> media) {
+        this.selected = media;
         notifyDataSetChanged();
     }
 
@@ -105,7 +122,7 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.MyView> {
 
     public interface Callback {
         void onLongClick();
-        void onClick(Photo photo, Boolean checked);
+        void onClick(Media media, Boolean checked);
     }
 
     @Override

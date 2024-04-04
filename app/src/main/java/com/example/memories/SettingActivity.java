@@ -10,7 +10,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -29,14 +28,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -53,19 +46,18 @@ import java.util.UUID;
 public class SettingActivity extends AppCompatActivity {
     FirebaseAuth firebaseAuth;
     FirebaseStorage storage;
-    FirebaseFirestore db;
     GoogleSignInClient googleSignInClient;
-    LinearLayout signoutBtn, trashBtn, syncBtn;
+    LinearLayout signOutBtn, trashBtn, syncBtn;
     ImageView avatarView;
     TextView fullNameText, emailText;
     ImageButton backButton;
-    String imageEncoded;
+    String imageEncoded, deviceId;
     List<String> imagesEncodedList;
     int fileNumber = 0;
     History history;
-    String deviceId;
     User user;
-    ArrayList<Photo> photos = new ArrayList<>();
+    ArrayList<Media> media = new ArrayList<>();
+    CollectionReference dbUser, dbHistories, dbMedia;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,11 +67,15 @@ public class SettingActivity extends AppCompatActivity {
         FirebaseApp.initializeApp(this);
         firebaseAuth = FirebaseAuth.getInstance();
         FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
-        db = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
         user = new User().getUser(this);
 
-        signoutBtn = findViewById(R.id.signoutButton);
+        Database db = new Database();
+        dbUser = db.getDbUser();
+        dbHistories = db.getDbHistories();
+        dbMedia = db.getDbMedia();
+
+        signOutBtn = findViewById(R.id.signoutButton);
         trashBtn = findViewById(R.id.trashBtn);
         fullNameText = findViewById(R.id.fullnameText);
         emailText = findViewById(R.id.emailText);
@@ -93,7 +89,7 @@ public class SettingActivity extends AppCompatActivity {
             emailText.setText(firebaseUser.getEmail());
         }
         googleSignInClient = GoogleSignIn.getClient(this, GoogleSignInOptions.DEFAULT_SIGN_IN);
-        signoutBtn.setOnClickListener(view -> {
+        signOutBtn.setOnClickListener(view -> {
             googleSignInClient.signOut().addOnCompleteListener(new OnCompleteListener<Void>() {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
@@ -141,9 +137,8 @@ public class SettingActivity extends AppCompatActivity {
     }
 
     public void addHistoryData() {
-        CollectionReference dbHistory = db.collection("histories");
         History newHistory = new History(user.getId(), new Date(), deviceId);
-        dbHistory.document(newHistory.getId()).set(newHistory);
+        dbHistories.document(newHistory.getId()).set(newHistory);
         history = newHistory;
     }
 
@@ -154,7 +149,6 @@ public class SettingActivity extends AppCompatActivity {
 
     public void uploadFile(String path) throws FileNotFoundException {
         StorageReference storageRef = storage.getReference();
-        CollectionReference dbPhoto = db.collection("photos");
 
         UUID uuid = UUID.randomUUID();
         String childPath = user.getId() + "/" + uuid.toString() + "-" + getName(path);
@@ -163,27 +157,27 @@ public class SettingActivity extends AppCompatActivity {
         InputStream stream = new FileInputStream(new File(path));
         UploadTask uploadTask = mountainsRef.putStream(stream);
 
-        Photo newPhoto = new Photo(user.getId(), history.getDate(), history.getId());
+        Media newMedia = new Media(user.getId(), history.getDate(), history.getId());
         uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                 taskSnapshot.getMetadata().getReference().getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                     @Override
                     public void onSuccess(Uri uri) {
-                        newPhoto.setImgUrl(uri.toString());
-                        dbPhoto.document(newPhoto.getId()).set(newPhoto);
-                        photos.add(newPhoto);
+                        newMedia.setImgUrl(uri.toString());
+                        dbMedia.document(newMedia.getId()).set(newMedia);
+                        media.add(newMedia);
 
-                        if (photos.size() == fileNumber) {
-                            db.collection("albums").document(user.getDefaultAlbum().getId()).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                        if (media.size() == fileNumber) {
+                            dbMedia.document(user.getDefaultAlbum().getId()).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                                 @Override
                                 public void onSuccess(DocumentSnapshot documentSnapshot) {
                                     Album album = documentSnapshot.toObject(Album.class);
-                                    ArrayList<Photo> newPhotos = album.getPhotos();
-                                    for (Photo photo: photos) {
-                                        newPhotos.add(photo);
+                                    ArrayList<Media> newMedia = album.getPhotos();
+                                    for (Media media : SettingActivity.this.media) {
+                                        newMedia.add(media);
                                     }
-                                    db.collection("albums").document(user.getDefaultAlbum().getId()).update("photos", newPhotos);
+                                    dbMedia.document(user.getDefaultAlbum().getId()).update("photos", newMedia);
                                     Toast.makeText(SettingActivity.this, "Cập nhật thành công!", Toast.LENGTH_SHORT).show();
                                 }
                             });

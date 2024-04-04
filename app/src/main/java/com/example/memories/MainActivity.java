@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
     Button button;
     FirebaseAuth auth;
     GoogleSignInClient googleSignInClient;
-    FirebaseFirestore db;
+    CollectionReference dbUser;
 
     private final ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
         @Override
@@ -74,7 +74,9 @@ public class MainActivity extends AppCompatActivity {
 
         FirebaseApp.initializeApp(this);
         auth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
+
+        Database db = new Database();
+        dbUser = db.getDbUser();
 
         button = (Button) findViewById(R.id.button_start);
 
@@ -114,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void onBoarding() {
         FirebaseUser user = auth.getCurrentUser();
-        CollectionReference dbUser = db.collection("users");
+
         dbUser.document(user.getUid()).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
