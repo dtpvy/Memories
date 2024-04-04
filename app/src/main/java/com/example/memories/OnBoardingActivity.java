@@ -2,12 +2,10 @@ package com.example.memories;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
 
-import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.app.SearchManager;
 import android.content.ClipData;
+import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -16,6 +14,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.view.View;
+import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -23,34 +22,24 @@ import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public class OnBoardingActivity extends AppCompatActivity {
     String[] stepDescriptions = {
-            "Welcome to Memories! Start editing like a pro with our intuitive tools and unleash your creativity today.",
-            "Get ready to transform your photos with Memories! Dive in and discover endless possibilities for editing and enhancing your images.",
-            "Welcome aboard! With Memories, your photos are about to get a stunning makeover. Let's start editing!"
+        "Chào mừng đến với Memories! Bắt đầu chỉnh sửa như một chuyên gia với các công cụ trực quan của chúng tôi và giải phóng sự sáng tạo của bạn ngay hôm nay.",
+        "Hãy chuẩn bị để biến đổi những bức ảnh của bạn với Memories! Lặn vào và khám phá vô số khả năng chỉnh sửa và nâng cao hình ảnh của bạn.",
+        "Chào mừng bạn đã đến! Với Memories, những bức ảnh của bạn sắp được làm mới một cách ngoạn mục. Hãy bắt đầu chỉnh sửa!"
     };
     int[] stepImages = { R.drawable.onboarding2, R.drawable.onboarding1, R.drawable.onboarding3};
     int step = 0, fileNumber;
@@ -60,21 +49,26 @@ public class OnBoardingActivity extends AppCompatActivity {
     ArrayList<View> stepView = new ArrayList<>();
     int PICK_IMAGE_MULTIPLE = 1;
     String imageEncoded;
-    List<String> imagesEncodedList;
+    List<Uri> imagesEncodedList;
     FirebaseStorage storage;
     User user;
-    FirebaseFirestore db;
     History history;
     String deviceId;
     Album defaultAlbum;
-    ArrayList<Photo> photos = new ArrayList<>();
+    ArrayList<Media> media = new ArrayList<>();
+    CollectionReference dbAlbum, dbMedia, dbUser, dbHistories;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_on_boarding);
 
-        db = FirebaseFirestore.getInstance();
+        Database db = new Database();
+        dbAlbum = db.getDbAlbum();
+        dbMedia = db.getDbMedia();
+        dbUser = db.getDbUser();
+        dbHistories = db.getDbHistories();
+
         storage = FirebaseStorage.getInstance();
         user = new User().getUser(this);
         deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
@@ -122,7 +116,7 @@ public class OnBoardingActivity extends AppCompatActivity {
     }
 
     public void syncImages() {
-        AlertDialog dialog = new AlertDialog.Builder(this).setMessage("Do you want to sync images in your device to our system?")
+        AlertDialog dialog = new AlertDialog.Builder(this).setMessage("Bạn có muốn đồng bộ hình ảnh trong thiết bị của bạn với hệ thống của chúng tôi không?")
             .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
@@ -145,7 +139,9 @@ public class OnBoardingActivity extends AppCompatActivity {
 
     private void chooseImages() {
         Intent intent = new Intent();
-        intent.setType("image/*");
+        intent.setType("*/*");
+        String[] mimeTypes = {"image/*", "video/*"};
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         intent.setAction(Intent.ACTION_GET_CONTENT);
         startActivityForResult(Intent.createChooser(intent,"Select Picture"), PICK_IMAGE_MULTIPLE);
@@ -155,32 +151,17 @@ public class OnBoardingActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         try {
             if (requestCode == PICK_IMAGE_MULTIPLE && resultCode == RESULT_OK && null != data) {
-                String[] filePathColumn = { MediaStore.Images.Media.DATA };
-                imagesEncodedList = new ArrayList<String>();
+                imagesEncodedList = new ArrayList<Uri>();
                 if (data.getData() != null){
-                    Uri mImageUri = data.getData();
-                    Cursor cursor = getContentResolver().query(mImageUri, filePathColumn, null, null, null);
-                    cursor.moveToFirst();
-
-                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                    imageEncoded  = cursor.getString(columnIndex);
-                    imagesEncodedList.add(imageEncoded);
-                    cursor.close();
+                    Uri uri = data.getData();
+                    imagesEncodedList.add(uri);
                 } else {
                     if (data.getClipData() != null) {
                         ClipData mClipData = data.getClipData();
-                        ArrayList<Uri> mArrayUri = new ArrayList<Uri>();
                         for (int i = 0; i < mClipData.getItemCount(); i++) {
                             ClipData.Item item = mClipData.getItemAt(i);
                             Uri uri = item.getUri();
-                            mArrayUri.add(uri);
-                            Cursor cursor = getContentResolver().query(uri, filePathColumn, null, null, null);
-                            cursor.moveToFirst();
-
-                            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                            imageEncoded  = cursor.getString(columnIndex);
-                            imagesEncodedList.add(imageEncoded);
-                            cursor.close();
+                            imagesEncodedList.add(uri);
                         }
                     }
                 }
@@ -198,22 +179,32 @@ public class OnBoardingActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
+    private String getRealPathFromURI(Uri contentURI) {
+        String result;
+        Cursor cursor = getContentResolver().query(contentURI, null, null, null, null);
+        if (cursor == null) { // Source is Dropbox or other similar local file path
+            result = contentURI.getPath();
+        } else {
+            cursor.moveToFirst();
+            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+            result = cursor.getString(idx);
+            cursor.close();
+        }
+        return result;
+    }
+
     public String getName(String path) {
         File file = new File(path);
         return file.getName();
     }
 
     public void setupAlbum() {
-        CollectionReference dbAlbum = db.collection("albums");
-        CollectionReference dbPhoto = db.collection("photos");
-        CollectionReference dbUser = db.collection("users");
-
         Album privateAlbum = new Album(user.getId(), getString(R.string.private_img), "Bảo mật", false);
         Album favouriteAlbum = new Album(user.getId(), getString(R.string.favourite_img), "Yêu thích", false );
         dbAlbum.document(defaultAlbum.getId()).set(defaultAlbum);
         dbAlbum.document(privateAlbum.getId()).set(privateAlbum);
         dbAlbum.document(favouriteAlbum.getId()).set(favouriteAlbum);
-        dbAlbum.document(defaultAlbum.getId()).update("photos", photos);
+        dbAlbum.document(defaultAlbum.getId()).update("photos", media);
 
         user.setDefaultAlbum(defaultAlbum);
         user.setFavouriteAlbum(favouriteAlbum);
@@ -237,34 +228,38 @@ public class OnBoardingActivity extends AppCompatActivity {
         if (user == null) return;
         defaultAlbum = new Album(user.getId());
 
-        CollectionReference dbHistory = db.collection("histories");
         History newHistory = new History(user.getId(), new Date(), deviceId);
-        dbHistory.document(newHistory.getId()).set(newHistory);
+        dbHistories.document(newHistory.getId()).set(newHistory);
         history = newHistory;
     }
 
-    public void uploadFile(String path) throws FileNotFoundException {
+    public String getMimeType(Uri uri) {
+        ContentResolver cR = getContentResolver();
+        String mime = cR.getType(uri);
+        return mime;
+    }
+
+    public void uploadFile(Uri uri) throws FileNotFoundException {
         StorageReference storageRef = storage.getReference();
-        CollectionReference dbPhoto = db.collection("photos");
 
         UUID uuid = UUID.randomUUID();
-        String childPath = user.getId() + "/" + uuid.toString() + "-" + getName(path);
+        String childPath = user.getId() + "/" + uuid.toString() + "-" + getName(uri.getPath());
         StorageReference mountainsRef = storageRef.child(childPath);
 
-        InputStream stream = new FileInputStream(new File(path));
+        InputStream stream = getContentResolver().openInputStream(uri);
         UploadTask uploadTask = mountainsRef.putStream(stream);
 
-        Photo newPhoto = new Photo(user.getId(), history.getDate(), history.getId());
+        Media newMedia = new Media(user.getId(), history.getDate(), history.getId(), getMimeType(uri));
         uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                 taskSnapshot.getMetadata().getReference().getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                     @Override
                     public void onSuccess(Uri uri) {
-                        newPhoto.setImgUrl(uri.toString());
-                        dbPhoto.document(newPhoto.getId()).set(newPhoto);
-                        photos.add(newPhoto);
-                        if (photos.size() == fileNumber) {
+                        newMedia.setImgUrl(uri.toString());
+                        dbMedia.document(newMedia.getId()).set(newMedia);
+                        media.add(newMedia);
+                        if (media.size() == fileNumber) {
                             syncSuccess();
                         }
                     }

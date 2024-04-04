@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -22,7 +21,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.common.reflect.TypeToken;
-import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.gson.Gson;
@@ -33,30 +32,33 @@ import java.util.Date;
 import java.util.UUID;
 
 public class SelectAlbumActivity extends AppCompatActivity {
-    FirebaseFirestore db;
     User user;
     ArrayList<Album> albums = new ArrayList<>();
-    ArrayList<Photo> photos = new ArrayList<>();
+    ArrayList<Media> media = new ArrayList<>();
     ListView listView;
     ImageView backBtn;
     LinearLayout addAlbumBtn;
     String albumId;
     Album currentAlbum;
+    CollectionReference dbAlbum, dbMedia;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select_album);
 
-        db = FirebaseFirestore.getInstance();
+        Database db = new Database();
+        dbAlbum = db.getDbAlbum();
+        dbMedia = db.getDbMedia();
+
         user = new User().getUser(this);
         Intent intent = getIntent();
         String intentData = intent.getStringExtra("photos");
         albumId = intent.getStringExtra("album_id");
 
         Gson gson = new Gson();
-        Type listType = new TypeToken<ArrayList<Photo>>(){}.getType();
-        photos = gson.fromJson(intentData, listType);
+        Type listType = new TypeToken<ArrayList<Media>>(){}.getType();
+        media = gson.fromJson(intentData, listType);
 
         listView = findViewById(R.id.albumList);
         loadAlbum();
@@ -81,7 +83,7 @@ public class SelectAlbumActivity extends AppCompatActivity {
 
     public void loadAlbum() {
         albums = new ArrayList<>();
-        db.collection("albums").whereEqualTo("userId", user.getId()).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+        dbAlbum.whereEqualTo("userId", user.getId()).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
                 if (task.isSuccessful()) {
@@ -134,7 +136,7 @@ public class SelectAlbumActivity extends AppCompatActivity {
                 } else {
                     error.setText("");
                     dialog.dismiss();
-                    Album album = new Album(user.getId(), photos.get(0).getImgUrl(), nameInput.getText().toString());
+                    Album album = new Album(user.getId(), media.get(0).getImgUrl(), nameInput.getText().toString());
                     AlertDialog onCreateDialog = onCreateDialog(album);
                     onCreateDialog.show();
                 }
@@ -161,27 +163,27 @@ public class SelectAlbumActivity extends AppCompatActivity {
                 .setItems(items, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int pos) {
                         if (pos == 0) {
-                            ArrayList<Photo> aPhotos = currentAlbum.getPhotos();
-                            ArrayList<Photo> newPhotos = new ArrayList<>();
-                            for (Photo photo : aPhotos) {
+                            ArrayList<Media> aMedia = currentAlbum.getPhotos();
+                            ArrayList<Media> newMedia = new ArrayList<>();
+                            for (Media media : aMedia) {
                                 Boolean include = false;
-                                for (int k = 0; k < photos.size(); k++) {
-                                    if (photos.get(k).getId().compareTo(photo.getId()) == 0) {
+                                for (int k = 0; k < SelectAlbumActivity.this.media.size(); k++) {
+                                    if (SelectAlbumActivity.this.media.get(k).getId().compareTo(media.getId()) == 0) {
                                         include = true;
                                         break;
                                     }
                                 }
                                 if (!include) {
-                                    newPhotos.add(photo);
+                                    newMedia.add(media);
                                 }
                             }
-                            db.collection("albums").document(currentAlbum.getId()).update("photos", newPhotos);
+                            dbAlbum.document(currentAlbum.getId()).update("photos", newMedia);
 
-                            ArrayList<Photo> albumPhoto = album.getPhotos();
-                            for (Photo photo: photos) {
-                                albumPhoto.add(photo);
+                            ArrayList<Media> albumMedia = album.getPhotos();
+                            for (Media media : SelectAlbumActivity.this.media) {
+                                albumMedia.add(media);
                             }
-                            db.collection("albums").document(album.getId()).set(album)
+                            dbAlbum.document(album.getId()).set(album)
                                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                                         @Override
                                         public void onSuccess(Void unused) {
@@ -191,15 +193,15 @@ public class SelectAlbumActivity extends AppCompatActivity {
                                     });
                         } else {
                             Date created = new Date();
-                            ArrayList<Photo> albumPhoto = album.getPhotos();
-                            for (int i = 0; i < photos.size(); i++) {
-                                Photo p = photos.get(i);
+                            ArrayList<Media> albumPhoto = album.getPhotos();
+                            for (int i = 0; i < media.size(); i++) {
+                                Media p = media.get(i);
                                 p.setId(UUID.randomUUID().toString());
                                 p.setCreatedAt(created);
-                                db.collection("photos").document(p.getId()).set(p);
+                                dbMedia.document(p.getId()).set(p);
                                 albumPhoto.add(p);
                             }
-                            db.collection("albums").document(album.getId()).set(album)
+                            dbAlbum.document(album.getId()).set(album)
                                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                                         @Override
                                         public void onSuccess(Void unused) {

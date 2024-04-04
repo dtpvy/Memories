@@ -7,8 +7,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import android.app.AlertDialog;
-import android.app.Dialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -19,38 +17,34 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.google.firebase.storage.FirebaseStorage;
 
 import java.util.ArrayList;
 
 public class HomeActivity extends AppCompatActivity {
     ArrayList<DiscoverHomeView> discovers = new ArrayList<>();
     ArrayList<Album> albums;
-    ArrayList<Photo> photos;
+    ArrayList<Media> media;
     ImageButton addButton, settingButton;
     Button seeAlbumButton;
     User user;
-    FirebaseFirestore db;
     TextView totalPhoto;
     AlertDialog createAlbumDialog;
     RecyclerView photosView, albumView;
     PhotoHomeAdapter photoHomeAdapter;
+    CollectionReference dbAlbum, dbMedia;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        db = FirebaseFirestore.getInstance();
+        Database db = new Database();
+        dbAlbum = db.getDbAlbum();
+        dbMedia = db.getDbMedia();
         user = new User().getUser(this);
 
         totalPhoto = findViewById(R.id.totalPhoto);
@@ -114,18 +108,18 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     public void getPhotos() {
-        photos = new ArrayList<>();
-        db.collection("photos").whereEqualTo("userId", user.getId()).whereEqualTo("deletedAt", null).get()
+        media = new ArrayList<>();
+        dbMedia.whereEqualTo("userId", user.getId()).whereEqualTo("deletedAt", null).get()
                 .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
                         if (task.isSuccessful()) {
                             for (QueryDocumentSnapshot document : task.getResult()) {
-                                Photo photo = document.toObject(Photo.class);
-                                photos.add(photo);
+                                Media media = document.toObject(Media.class);
+                                HomeActivity.this.media.add(media);
                             }
-                            photoHomeAdapter.setData(photos);
-                            totalPhoto.setText(photos.size() + " photos");
+                            photoHomeAdapter.setData(media);
+                            totalPhoto.setText(media.size() + " photos");
                         }
                     }
                 });
@@ -138,16 +132,16 @@ public class HomeActivity extends AppCompatActivity {
         albumView.setLayoutManager(albumLayoutManager);
         albums = new ArrayList<>();
 
-        db.collection("albums").whereEqualTo("userId", user.getId()).whereEqualTo("mutate", true).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+        dbAlbum.whereEqualTo("userId", user.getId()).whereEqualTo("mutate", true).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
                 if (task.isSuccessful()) {
                     for (QueryDocumentSnapshot document : task.getResult()) {
                         Album album = document.toObject(Album.class);
                         if (album.getImgUrl() == null) {
-                            ArrayList<Photo> photos = album.getPhotos();
-                            if (photos.size() > 0) {
-                                album.setImgUrl(photos.get(photos.size()-1).getImgUrl());
+                            ArrayList<Media> media = album.getPhotos();
+                            if (media.size() > 0) {
+                                album.setImgUrl(media.get(media.size()-1).getImgUrl());
                             } else {
                                 album.setImgUrl(getString(R.string.empty_img));
                             }

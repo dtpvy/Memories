@@ -3,28 +3,20 @@ package com.example.memories;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.ColorSpace;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
-import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Locale;
-
-import javax.security.auth.callback.Callback;
 
 public class AlbumListAdapter extends ArrayAdapter<Album> {
     private Context context;
@@ -60,9 +52,9 @@ public class AlbumListAdapter extends ArrayAdapter<Album> {
         LinearLayout layout = view.findViewById(R.id.albumView);
 
         if (album.getImgUrl() == null) {
-            ArrayList<Photo> photos = album.getPhotos();
-            if (photos.size() > 0) {
-                album.setImgUrl(photos.get(photos.size()-1).getImgUrl());
+            ArrayList<Media> media = album.getPhotos();
+            if (media.size() > 0) {
+                album.setImgUrl(media.get(media.size()-1).getImgUrl());
             } else {
                 album.setImgUrl(((Activity) context).getString(R.string.empty_img));
             }

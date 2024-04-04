@@ -2,7 +2,6 @@ package com.example.memories;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Map;
 import java.util.UUID;
 
 public class Album {
@@ -11,7 +10,7 @@ public class Album {
     private String userId;
     private String imgUrl;
     private Boolean isMutate;
-    private ArrayList<Photo> photos;
+    private ArrayList<Media> media;
     private Date createdAt;
 
     public  Album() {}
@@ -21,7 +20,7 @@ public class Album {
         this.name = "Tất cả";
         this.userId = userId;
         this.isMutate = false;
-        this.photos = new ArrayList<>();
+        this.media = new ArrayList<>();
         this.createdAt = new Date();
     }
 
@@ -30,7 +29,7 @@ public class Album {
         this.name = name;
         this.imgUrl = imgUrl;
         this.isMutate = true;
-        this.photos = new ArrayList<>();
+        this.media = new ArrayList<>();
         this.createdAt = new Date();
     }
 
@@ -40,17 +39,17 @@ public class Album {
         this.imgUrl = imgUrl;
         this.userId = userId;
         this.isMutate = true;
-        this.photos = new ArrayList<>();
+        this.media = new ArrayList<>();
         this.createdAt = new Date();
     }
 
-    public Album(String userId, String imgUrl, String name, ArrayList<Photo> photos) {
+    public Album(String userId, String imgUrl, String name, ArrayList<Media> media) {
         this.id = UUID.randomUUID().toString();
         this.name = name;
         this.imgUrl = imgUrl;
         this.userId = userId;
         this.isMutate = true;
-        this.photos = photos;
+        this.media = media;
         this.createdAt = new Date();
     }
 
@@ -60,7 +59,7 @@ public class Album {
         this.imgUrl = imgUrl;
         this.userId = userId;
         this.isMutate = isMutate;
-        this.photos = new ArrayList<>();
+        this.media = new ArrayList<>();
         this.createdAt = new Date();
     }
 
@@ -88,12 +87,12 @@ public class Album {
         this.name = name;
     }
 
-    public ArrayList<Photo> getPhotos() {
-        return photos;
+    public ArrayList<Media> getPhotos() {
+        return media;
     }
 
-    public void setPhotos(ArrayList<Photo> photos) {
-        this.photos = photos;
+    public void setPhotos(ArrayList<Media> media) {
+        this.media = media;
     }
 
     public String getImgUrl() {

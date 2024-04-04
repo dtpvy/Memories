@@ -8,28 +8,21 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.GridLayout;
-import android.widget.GridView;
-import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import javax.security.auth.callback.Callback;
-
 public class PhotoListAdapter extends ArrayAdapter<PhotoList> {
     private final Context context;
     private final ArrayList<PhotoList> photoLists;
-    private ArrayList<Photo> selected;
+    private ArrayList<Media> selected;
     private Boolean isEdit = false;
     private Callback callback;
 
@@ -53,7 +46,7 @@ public class PhotoListAdapter extends ArrayAdapter<PhotoList> {
 
     public interface Callback {
         void onLongClick();
-        void onChange(ArrayList<Photo> photos);
+        void onChange(ArrayList<Media> media);
     }
 
     @Override
@@ -91,23 +84,23 @@ public class PhotoListAdapter extends ArrayAdapter<PhotoList> {
         String date = dateFormat.format(photoLists.get(position).getDate());
         dateText.setText(date);
 
-        PhotoAdapter photoAdapter = new PhotoAdapter(photoLists.get(position).getPhotos(), selected);
+        PhotoAdapter photoAdapter = new PhotoAdapter(photoLists.get(position).getPhotos(), selected, context);
         photoAdapter.setIsHold(isEdit);
         photoAdapter.setCallback(new PhotoAdapter.Callback() {
             @Override
             public void onLongClick() {
                 if (callback != null) callback.onLongClick();
             }
-            public void onClick(Photo photo, Boolean checked) {
+            public void onClick(Media media, Boolean checked) {
                 int position = -1;
                 for (int i = 0; i < selected.size(); i++) {
-                    if (selected.get(i).getId().compareTo(photo.getId()) == 0) {
+                    if (selected.get(i).getId().compareTo(media.getId()) == 0) {
                         position = i;
                         break;
                     }
                 }
                 if (position < 0 && checked) {
-                    selected.add(photo);
+                    selected.add(media);
                 }
                 if (position >= 0 && !checked) {
                     selected.remove(position);
@@ -115,13 +108,14 @@ public class PhotoListAdapter extends ArrayAdapter<PhotoList> {
                 onChange(selected);
             }
         });
+
         photosView.setAdapter(photoAdapter);
 
         selectAll.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Boolean select = isSelectedAll(photoLists.get(position));
-                for (Photo item: photoLists.get(position).getPhotos()) {
+                for (Media item: photoLists.get(position).getPhotos()) {
                     int idx = -1;
                     for (int i = 0; i < selected.size(); i++) {
                         if (selected.get(i).getId().compareTo(item.getId()) == 0) {
@@ -145,10 +139,10 @@ public class PhotoListAdapter extends ArrayAdapter<PhotoList> {
     }
 
     public Boolean isSelectedAll(PhotoList photoList) {
-        for (Photo photo: photoList.getPhotos()) {
+        for (Media media : photoList.getPhotos()) {
             Boolean include = false;
-            for (Photo select: selected) {
-                if (photo.getId().compareTo(select.getId()) == 0) {
+            for (Media select: selected) {
+                if (media.getId().compareTo(select.getId()) == 0) {
                     include = true;
                     break;
                 }
@@ -158,19 +152,19 @@ public class PhotoListAdapter extends ArrayAdapter<PhotoList> {
         return true;
     }
 
-    public void onChange(ArrayList<Photo> selected) {
+    public void onChange(ArrayList<Media> selected) {
         notifyDataSetChanged();
         if (callback != null) callback.onChange(selected);
     }
 
     public void onSelectAll() {
-        ArrayList<Photo> photos = new ArrayList<>();
+        ArrayList<Media> medias = new ArrayList<>();
         for (PhotoList photoList: photoLists) {
-            for (Photo photo: photoList.getPhotos()) {
-                photos.add(photo);
+            for (Media media : photoList.getPhotos()) {
+                medias.add(media);
             }
         }
-        if (selected.size() < photos.size()) selected = photos;
+        if (selected.size() < medias.size()) selected = medias;
         else selected.clear();
         onChange(selected);
     }

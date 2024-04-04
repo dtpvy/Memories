@@ -3,35 +3,39 @@ package com.example.memories;
 import java.util.Date;
 import java.util.UUID;
 
-public class Photo {
+public class Media {
     private String id;
     private String userId;
     private String imgUrl;
+    private String type;
     private Date createdAt;
     private String historyId;
     private Date deletedAt;
 
-    public Photo() {}
+    public Media() {}
 
-    public Photo(String userId, String imgUrl, Date createdAt, String historyId) {
+    public Media(String userId, String imgUrl, Date createdAt, String historyId, String type) {
         this.id = UUID.randomUUID().toString();
         this.userId = userId;
         this.historyId = historyId;
         this.imgUrl = imgUrl;
         this.createdAt = createdAt;
+        this.type = type;
     }
 
-    public Photo(String userId, Date createdAt, String historyId) {
+    public Media(String userId, Date createdAt, String historyId, String type) {
         this.id = UUID.randomUUID().toString();
         this.userId = userId;
         this.historyId = historyId;
         this.createdAt = createdAt;
+        this.type = type;
     }
 
-    public Photo(String imgUrl, Date createdAt) {
+    public Media(String imgUrl, Date createdAt, String type) {
         this.id = UUID.randomUUID().toString();
         this.imgUrl = imgUrl;
         this.createdAt = createdAt;
+        this.type = type;
     }
 
     public String getImgUrl() {
@@ -77,4 +81,16 @@ public class Photo {
     public void setDeletedAt(Date date) {this.deletedAt = date; }
 
     public Date getDeletedAt() { return this.deletedAt; }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public boolean isVideo() {
+        return this.type.contains("video");
+    }
 }

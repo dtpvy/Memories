@@ -5,16 +5,16 @@ import java.util.Date;
 
 public class PhotoList {
     private Date date;
-    private ArrayList<Photo> photos;
+    private ArrayList<Media> media;
 
     public PhotoList(Date date) {
         this.date = date;
-        this.photos = new ArrayList<Photo>();
+        this.media = new ArrayList<Media>();
     }
 
-    public PhotoList(Date date, ArrayList<Photo> photos) {
+    public PhotoList(Date date, ArrayList<Media> media) {
         this.date = date;
-        this.photos = photos;
+        this.media = media;
     }
 
 
@@ -22,7 +22,7 @@ public class PhotoList {
         return date;
     }
 
-    public ArrayList<Photo> getPhotos() {
-        return photos;
+    public ArrayList<Media> getPhotos() {
+        return media;
     }
 }

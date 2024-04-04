@@ -5,22 +5,16 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
-import android.annotation.SuppressLint;
-import android.content.ClipData;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -34,10 +28,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
@@ -50,14 +41,12 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 public class AlbumActivity extends AppCompatActivity {
     ArrayList<Album> albums = new ArrayList<>();
     ArrayList<Album> selected = new ArrayList<>();;
     ImageButton backBtn;
-    FirebaseFirestore db;
     User user;
     RecyclerView albumView;
     ConstraintLayout albumControl;
@@ -67,6 +56,8 @@ public class AlbumActivity extends AppCompatActivity {
     FirebaseStorage storage;
     String editPath = "";
     ImageView imageView;
+    CollectionReference dbAlbum;
+    CollectionReference dbMedia;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,7 +65,11 @@ public class AlbumActivity extends AppCompatActivity {
         setContentView(R.layout.activity_album);
 
         storage = FirebaseStorage.getInstance();
-        db = FirebaseFirestore.getInstance();
+
+        Database db = new Database();
+        dbAlbum = db.getDbAlbum();
+        dbMedia = db.getDbMedia();
+
         user = new User().getUser(this);
 
         removeDialog = onCreateDialogRemove();
@@ -127,10 +122,10 @@ public class AlbumActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 for (Album album: selected) {
-                    for (Photo photo: album.getPhotos()) {
-                        db.collection("photos").document(photo.getId()).update("deletedAt", new Date());
+                    for (Media media : album.getPhotos()) {
+                        dbMedia.document(media.getId()).update("deletedAt", new Date());
                     }
-                    db.collection("albums").document(album.getId()).delete();
+                    dbAlbum.document(album.getId()).delete();
                 }
                 albumControl.setVisibility(View.INVISIBLE);
                 albumView.setPadding(0, 0, 0, 0);
@@ -151,16 +146,16 @@ public class AlbumActivity extends AppCompatActivity {
 
     public void loadData() {
         albums = new ArrayList<>();
-        db.collection("albums").whereEqualTo("userId", user.getId()).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+        dbAlbum.whereEqualTo("userId", user.getId()).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
                 if (task.isSuccessful()) {
                     for (QueryDocumentSnapshot document : task.getResult()) {
                         Album album = document.toObject(Album.class);
                         if (album.getImgUrl() == null) {
-                            ArrayList<Photo> photos = album.getPhotos();
-                            if (photos.size() > 0) {
-                                album.setImgUrl(photos.get(photos.size()-1).getImgUrl());
+                            ArrayList<Media> media = album.getPhotos();
+                            if (media.size() > 0) {
+                                album.setImgUrl(media.get(media.size()-1).getImgUrl());
                             } else {
                                 album.setImgUrl(getString(R.string.empty_img));
                             }
@@ -203,10 +198,10 @@ public class AlbumActivity extends AppCompatActivity {
                 .setPositiveButton("Xác nhận", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         for (Album album: selected) {
-                            for (Photo photo: album.getPhotos()) {
-                                db.collection("photos").document(photo.getId()).delete();
+                            for (Media media : album.getPhotos()) {
+                                dbMedia.document(media.getId()).delete();
                             }
-                            db.collection("albums").document(album.getId()).delete();
+                            dbMedia.document(album.getId()).delete();
                         }
                         albumControl.setVisibility(View.INVISIBLE);
                         albumView.setPadding(0, 0, 0, 0);
@@ -331,8 +326,8 @@ public class AlbumActivity extends AppCompatActivity {
                 } else {
                     error.setText("");
                     dialog.dismiss();
-                    db.collection("albums").document(selected.get(0).getId()).update("name", nameInput.getText().toString());
-                    db.collection("albums").document(selected.get(0).getId()).update("imgUrl", editPath);
+                    dbAlbum.document(selected.get(0).getId()).update("name", nameInput.getText().toString());
+                    dbAlbum.document(selected.get(0).getId()).update("imgUrl", editPath);
                     loadData();
 
                     albumControl.setVisibility(View.INVISIBLE);
