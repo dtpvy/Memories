@@ -7,4 +7,6 @@
     <string name="private_img">https://firebasestorage.googleapis.com/v0/b/memories-4dcba.appspot.com/o/unnamed.png?alt=media&amp;token=11d00ce1-2aea-4034-aa1b-87ef853d5ded</string>
     <string name="empty_img">https://firebasestorage.googleapis.com/v0/b/memories-4dcba.appspot.com/o/istockphoto-1147544807-612x612.jpg?alt=media&amp;token=afe12771-dfd7-4843-932e-83b6b22e6ced</string>
     <string name="current_user">current_user</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

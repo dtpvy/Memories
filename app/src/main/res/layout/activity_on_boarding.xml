@@ -17,7 +17,7 @@
         <ImageView
             android:id="@+id/imgDescription"
             android:layout_width="match_parent"
-            android:layout_height="540dp"
+            android:layout_height="300dp"
             android:scaleType="centerCrop"
             android:layout_marginBottom="20dp"
             tools:srcCompat="@tools:sample/avatars" />
@@ -43,10 +43,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:backgroundTint="@color/primary_button"
+                android:backgroundTint="@color/border"
+                android:textColor="@color/black"
                 android:paddingHorizontal="0dp"
-                android:visibility="invisible"
-                android:text="Previous" />
+                android:text="Skip" />
 
             <androidx.cardview.widget.CardView
                 app:cardCornerRadius="15dp"

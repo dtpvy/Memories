@@ -21,6 +21,7 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.MyView> {
     private Callback callback;
     private ArrayList<Media> selected;
     private Context context;
+    private String albumId;
 
     public class MyView extends RecyclerView.ViewHolder {
         ImageView imageView;
@@ -38,16 +39,18 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.MyView> {
         }
     }
 
-    public PhotoAdapter(ArrayList<Media> list, Context context) {
+    public PhotoAdapter(ArrayList<Media> list, Context context, String albumId) {
         this.list = list;
         this.selected = new ArrayList<>();
         this.context = context;
+        this.albumId = albumId;
     }
 
-    public PhotoAdapter(ArrayList<Media> list, ArrayList<Media> selected, Context context) {
+    public PhotoAdapter(ArrayList<Media> list, ArrayList<Media> selected, Context context, String albumId) {
         this.list = list;
         this.selected = selected;
         this.context = context;
+        this.albumId = albumId;
     }
 
     @Override
@@ -91,6 +94,7 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.MyView> {
                 } else {
                     Intent intent = new Intent(context, PhotoDetailActivity.class);
                     intent.putExtra("media_id", _media.getId());
+                    intent.putExtra("album_id", albumId);
                     context.startActivity(intent);
                 }
             }

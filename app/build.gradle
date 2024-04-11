@@ -28,10 +28,16 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     buildToolsVersion '33.0.0'
+    sourceSets {
+        main {
+            assets {
+                srcDirs 'src/main/assets'
+            }
+        }
+    }
 }
 
 dependencies {
-
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.5.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
@@ -47,7 +53,11 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.4"))
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-storage")
-    implementation 'com.google.code.gson:gson:2.8.8'
-
+    implementation "com.google.code.gson:gson:2.8.8"
+    implementation 'com.lyft:scissors:1.1.1'
+    implementation 'com.github.rockerhieu:emojicon:v1.4.2'
+    implementation 'com.burhanrashid52:photoeditor:0.3.3'
+    implementation 'com.github.naz013:ColorSlider:1.0.6'
+    implementation("com.google.firebase:firebase-appcheck")
 
 }

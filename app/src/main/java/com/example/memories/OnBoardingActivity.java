@@ -9,14 +9,18 @@ import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.provider.Settings;
+import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.View;
 import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -45,7 +49,7 @@ public class OnBoardingActivity extends AppCompatActivity {
     int step = 0, fileNumber;
     ImageView imgDescription;
     TextView description;
-    Button prevBtn, nextBtn;
+    Button prevBtn, nextBtn, skipBtn;
     ArrayList<View> stepView = new ArrayList<>();
     int PICK_IMAGE_MULTIPLE = 1;
     String imageEncoded;
@@ -81,11 +85,21 @@ public class OnBoardingActivity extends AppCompatActivity {
         stepView.add(findViewById(R.id.step2));
         stepView.add(findViewById(R.id.step3));
         setActive(0);
+        Display display = getWindowManager().getDefaultDisplay();
+        int width = display.getWidth();
+        int height = display.getHeight();
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(width,height*2/3);
+        imgDescription.setLayoutParams(params);
 
         prevBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                setActive(step-1);
+                if (step == 0) {
+                    Intent intent = new Intent(OnBoardingActivity.this, HomeActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
+                    OnBoardingActivity.this.startActivity(intent);
+                    OnBoardingActivity.this.finish();
+                } else setActive(step-1);
             }
         });
 
@@ -101,9 +115,18 @@ public class OnBoardingActivity extends AppCompatActivity {
         });
     }
 
+    @SuppressLint("ResourceType")
     public void setActive(int step) {
         this.step = step;
-        prevBtn.setVisibility(step > 0 ? View.VISIBLE : View.INVISIBLE);
+        if (step > 0) {
+            prevBtn.setText("Previous");
+            prevBtn.setBackgroundColor(Color.parseColor(getString(R.color.primary_button)));
+            prevBtn.setTextColor(Color.WHITE);
+        } else {
+            prevBtn.setText("Skip");
+            prevBtn.setBackgroundColor(Color.parseColor(getString(R.color.border)));
+            prevBtn.setTextColor(Color.BLACK);
+        }
         imgDescription.setImageResource(stepImages[step]);
         description.setText(stepDescriptions[step]);
         for (int i = 0; i < stepView.size(); ++i) {

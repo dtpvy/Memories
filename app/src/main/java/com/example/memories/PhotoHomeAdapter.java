@@ -65,6 +65,9 @@ public class PhotoHomeAdapter extends RecyclerView.Adapter<PhotoHomeAdapter.View
             };
 
             handlerInMainThread.post(calcDuration);
+        } else {
+            holder.video.setVisibility(View.INVISIBLE);
+            holder.time.setVisibility(View.INVISIBLE);
         }
 
         holder.image.setOnClickListener(new View.OnClickListener() {
@@ -76,6 +79,7 @@ public class PhotoHomeAdapter extends RecyclerView.Adapter<PhotoHomeAdapter.View
                 } else {
                     Intent intent = new Intent(context, PhotoDetailActivity.class);
                     intent.putExtra("media_id", _media.getId());
+                    intent.putExtra("album_id", "default");
                     context.startActivity(intent);
                 }
             }

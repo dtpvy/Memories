@@ -5,10 +5,12 @@ import java.util.Date;
 
 public class PhotoList {
     private Date date;
+    private String albumId;
     private ArrayList<Media> media;
 
-    public PhotoList(Date date) {
+    public PhotoList(Date date, String albumId) {
         this.date = date;
+        this.albumId = albumId;
         this.media = new ArrayList<Media>();
     }
 
@@ -17,6 +19,15 @@ public class PhotoList {
         this.media = media;
     }
 
+    public PhotoList(Date date, String albumId, ArrayList<Media> media) {
+        this.date = date;
+        this.albumId = albumId;
+        this.media = media;
+    }
+
+    public String getAlbumId() {
+        return albumId;
+    }
 
     public Date getDate() {
         return date;
