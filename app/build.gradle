@@ -48,6 +48,7 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-storage")
     implementation 'com.google.code.gson:gson:2.8.8'
+    implementation('com.arthenica:ffmpeg-kit-full:6.0-2')
 
 
 }
