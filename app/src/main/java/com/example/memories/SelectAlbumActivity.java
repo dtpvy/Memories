@@ -55,6 +55,7 @@ public class SelectAlbumActivity extends AppCompatActivity {
         Intent intent = getIntent();
         String intentData = intent.getStringExtra("photos");
         albumId = intent.getStringExtra("album_id");
+        System.out.println(albumId);
 
         Gson gson = new Gson();
         Type listType = new TypeToken<ArrayList<Media>>(){}.getType();
@@ -89,9 +90,10 @@ public class SelectAlbumActivity extends AppCompatActivity {
                 if (task.isSuccessful()) {
                     for (QueryDocumentSnapshot queryDocumentSnapshot: task.getResult()) {
                         Album album = queryDocumentSnapshot.toObject(Album.class);
-                        if (album.getId().compareTo(albumId) == 0) {
+                        if (albumId != null && album.getId().compareTo(albumId) == 0) {
                             currentAlbum = album;
-                        } else albums.add(album);
+                        } else
+                            albums.add(album);
                     }
                     AlbumListAdapter albumListAdapter = new AlbumListAdapter(SelectAlbumActivity.this, albums);
                     albumListAdapter.setCallback(new AlbumListAdapter.Callback() {
@@ -157,62 +159,83 @@ public class SelectAlbumActivity extends AppCompatActivity {
     }
 
     public AlertDialog onCreateDialog(Album album) {
-        String[] items = {"Di chuyển", "Sao chép"};
         AlertDialog.Builder builder = new AlertDialog.Builder(SelectAlbumActivity.this);
-        builder.setTitle("Đang thêm ảnh")
-                .setItems(items, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int pos) {
-                        if (pos == 0) {
-                            ArrayList<Media> aMedia = currentAlbum.getPhotos();
-                            ArrayList<Media> newMedia = new ArrayList<>();
-                            for (Media media : aMedia) {
-                                Boolean include = false;
-                                for (int k = 0; k < SelectAlbumActivity.this.media.size(); k++) {
-                                    if (SelectAlbumActivity.this.media.get(k).getId().compareTo(media.getId()) == 0) {
-                                        include = true;
-                                        break;
-                                    }
-                                }
-                                if (!include) {
-                                    newMedia.add(media);
-                                }
+        if (currentAlbum != null) {
+            String[] items = {"Di chuyển", "Sao chép"};
+            builder.setTitle("Đang thêm ảnh")
+                    .setItems(items, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int pos) {
+                            if (pos == 0) {
+                                move(album);
+                            } else {
+                                copy(album);
                             }
-                            dbAlbum.document(currentAlbum.getId()).update("photos", newMedia);
 
-                            ArrayList<Media> albumMedia = album.getPhotos();
-                            for (Media media : SelectAlbumActivity.this.media) {
-                                albumMedia.add(media);
-                            }
-                            dbAlbum.document(album.getId()).set(album)
-                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                        @Override
-                                        public void onSuccess(Void unused) {
-                                            Toast.makeText(SelectAlbumActivity.this, "Upload successfully!", Toast.LENGTH_SHORT).show();
-                                            finish();
-                                        }
-                                    });
-                        } else {
-                            Date created = new Date();
-                            ArrayList<Media> albumPhoto = album.getPhotos();
-                            for (int i = 0; i < media.size(); i++) {
-                                Media p = media.get(i);
-                                p.setId(UUID.randomUUID().toString());
-                                p.setCreatedAt(created);
-                                dbMedia.document(p.getId()).set(p);
-                                albumPhoto.add(p);
-                            }
-                            dbAlbum.document(album.getId()).set(album)
-                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                        @Override
-                                        public void onSuccess(Void unused) {
-                                            Toast.makeText(SelectAlbumActivity.this, "Upload successfully!", Toast.LENGTH_SHORT).show();
-                                            finish();
-                                        }
-                                    });
                         }
+                    });
+        } else {
+            String[] items = { "Sao chép"};
+            builder.setTitle("Đang thêm ảnh")
+                    .setItems(items, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int pos) {
+                            if (pos == 0) {
+                                copy(album);
+                            }
+                        }
+                    });
+        }
 
+        return builder.create();
+    }
+
+    public void move(Album album) {
+        ArrayList<Media> aMedia = currentAlbum.getPhotos();
+        ArrayList<Media> newMedia = new ArrayList<>();
+        for (Media media : aMedia) {
+            Boolean include = false;
+            for (int k = 0; k < SelectAlbumActivity.this.media.size(); k++) {
+                if (SelectAlbumActivity.this.media.get(k).getId().compareTo(media.getId()) == 0) {
+                    include = true;
+                    break;
+                }
+            }
+            if (!include) {
+                newMedia.add(media);
+            }
+        }
+        dbAlbum.document(currentAlbum.getId()).update("photos", newMedia);
+
+        ArrayList<Media> albumMedia = album.getPhotos();
+        for (Media media : SelectAlbumActivity.this.media) {
+            albumMedia.add(media);
+        }
+        dbAlbum.document(album.getId()).set(album)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void unused) {
+                        Toast.makeText(SelectAlbumActivity.this, "Upload successfully!", Toast.LENGTH_SHORT).show();
+                        finish();
                     }
                 });
-        return builder.create();
+    }
+
+    public void copy(Album album) {
+        Date created = new Date();
+        ArrayList<Media> albumPhoto = album.getPhotos();
+        for (int i = 0; i < media.size(); i++) {
+            Media p = media.get(i);
+            p.setId(UUID.randomUUID().toString());
+            p.setCreatedAt(created);
+            dbMedia.document(p.getId()).set(p);
+            albumPhoto.add(p);
+        }
+        dbAlbum.document(album.getId()).set(album)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void unused) {
+                        Toast.makeText(SelectAlbumActivity.this, "Upload successfully!", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                });
     }
 }

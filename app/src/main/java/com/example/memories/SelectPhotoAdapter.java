@@ -101,6 +101,9 @@ public class SelectPhotoAdapter extends RecyclerView.Adapter<SelectPhotoAdapter.
             };
 
             handlerInMainThread.post(calcDuration);
+        } else {
+            holder.video.setVisibility(View.INVISIBLE);
+            holder.time.setVisibility(View.INVISIBLE);
         }
     }
 

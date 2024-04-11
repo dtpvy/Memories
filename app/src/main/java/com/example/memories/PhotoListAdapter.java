@@ -25,12 +25,14 @@ public class PhotoListAdapter extends ArrayAdapter<PhotoList> {
     private ArrayList<Media> selected;
     private Boolean isEdit = false;
     private Callback callback;
+    private String albumId;
 
-    public PhotoListAdapter(Context context, ArrayList<PhotoList> photoLists) {
+    public PhotoListAdapter(Context context, ArrayList<PhotoList> photoLists, String albumId) {
         super(context, 0, photoLists);
         this.context = context;
         this.photoLists = photoLists;
         this.selected = new ArrayList<>();
+        this.albumId = albumId;
     }
 
     public void setIsEdit(Boolean isEdit) {
@@ -84,7 +86,7 @@ public class PhotoListAdapter extends ArrayAdapter<PhotoList> {
         String date = dateFormat.format(photoLists.get(position).getDate());
         dateText.setText(date);
 
-        PhotoAdapter photoAdapter = new PhotoAdapter(photoLists.get(position).getPhotos(), selected, context);
+        PhotoAdapter photoAdapter = new PhotoAdapter(photoLists.get(position).getPhotos(), selected, context, albumId);
         photoAdapter.setIsHold(isEdit);
         photoAdapter.setCallback(new PhotoAdapter.Callback() {
             @Override

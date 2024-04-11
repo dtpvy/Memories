@@ -188,10 +188,10 @@ public class PhotoActivity extends AppCompatActivity {
                 List<Date> dates = new ArrayList<>(photos.keySet());
                 Collections.sort(dates);
                 for (int i = 0; i < dates.size(); i++) {
-                    photoLists.add(new PhotoList(dates.get(i), photos.get(dates.get(i))));
+                    photoLists.add(new PhotoList(dates.get(i), album.getId(), photos.get(dates.get(i))));
                 }
 
-                photoListAdapter = new PhotoListAdapter(PhotoActivity.this, photoLists);
+                photoListAdapter = new PhotoListAdapter(PhotoActivity.this, photoLists, albumId);
                 photoListAdapter.setCallback(new PhotoListAdapter.Callback() {
                     @Override
                     public void onLongClick() {
@@ -234,7 +234,7 @@ public class PhotoActivity extends AppCompatActivity {
                         photoLists.add(new PhotoList(dates.get(i), photos.get(dates.get(i))));
                     }
 
-                    photoListAdapter = new PhotoListAdapter(PhotoActivity.this, photoLists);
+                    photoListAdapter = new PhotoListAdapter(PhotoActivity.this, photoLists, albumId);
                     photoListAdapter.setCallback(new PhotoListAdapter.Callback() {
                         @Override
                         public void onLongClick() {

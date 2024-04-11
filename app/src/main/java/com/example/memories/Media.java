@@ -38,6 +38,12 @@ public class Media {
         this.type = type;
     }
 
+    public Media(String userId, Date createdAt) {
+        this.id = UUID.randomUUID().toString();
+        this.createdAt = createdAt;
+        this.userId = userId;
+    }
+
     public String getImgUrl() {
         return imgUrl;
     }
