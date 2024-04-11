@@ -24,6 +24,9 @@
             android:name=".PhotoDetailActivity"
             android:exported="false" />
         <activity
+            android:name=".VideoDetailActivity"
+            android:exported="false" />
+        <activity
             android:name=".SelectAlbumActivity"
             android:exported="false" />
         <activity

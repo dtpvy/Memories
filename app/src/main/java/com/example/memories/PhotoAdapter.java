@@ -87,7 +87,9 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.MyView> {
             public void onClick(View view) {
                 Media _media = list.get(holder.getAdapterPosition());
                 if (_media.isVideo()) {
-
+                    Intent intent = new Intent(context, VideoDetailActivity.class);
+                    intent.putExtra("media_id", _media.getId());
+                    context.startActivity(intent);
                 } else {
                     Intent intent = new Intent(context, PhotoDetailActivity.class);
                     intent.putExtra("media_id", _media.getId());

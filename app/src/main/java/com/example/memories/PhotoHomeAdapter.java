@@ -72,7 +72,9 @@ public class PhotoHomeAdapter extends RecyclerView.Adapter<PhotoHomeAdapter.View
             public void onClick(View view) {
                 Media _media = media.get(holder.getAdapterPosition());
                 if (_media.isVideo()) {
-
+                    Intent intent = new Intent(context, VideoDetailActivity.class);
+                    intent.putExtra("media_id", _media.getId());
+                    context.startActivity(intent);
                 } else {
                     Intent intent = new Intent(context, PhotoDetailActivity.class);
                     intent.putExtra("media_id", _media.getId());
