@@ -1,11 +1,16 @@
 package com.example.memories;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -13,6 +18,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -40,7 +48,7 @@ public class PhotoActivity extends AppCompatActivity {
     User user;
     ListView listView;
     ConstraintLayout photoControl;
-    LinearLayout addBtn, trashBtn, downBtn, restoreBtn, deleteBtn;
+    LinearLayout addBtn, trashBtn, downBtn, restoreBtn, deleteBtn, shareBtn;
     Boolean isEdit = false;
     PhotoListAdapter photoListAdapter;
     String albumId;
@@ -65,6 +73,7 @@ public class PhotoActivity extends AppCompatActivity {
         albumName = findViewById(R.id.albumName);
         listView = findViewById(R.id.photoList);
         chooseText = findViewById(R.id.chooseText);
+        shareBtn = findViewById(R.id.sharePhoto);
 
         if (albumId.compareTo("trash") != 0) {
             photoControl = findViewById(R.id.photoControl);
@@ -138,6 +147,35 @@ public class PhotoActivity extends AppCompatActivity {
             public void onClick(View view) {
                 downloadImage();
                 onChangeMode(false);
+            }
+        });
+
+        shareBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ArrayList<Uri> imageUris = new ArrayList<>();
+                for (Media media: selected) {
+                    Glide.with(getApplicationContext()).asBitmap().load(media.getImgUrl()).into(new CustomTarget<Bitmap>() {
+                        @Override
+                        public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                            Uri imageUri= Uri.parse(MediaStore.Images.Media.insertImage(getContentResolver(), resource, media.getId(), null));
+                            imageUris.add(imageUri);
+                            if (imageUris.size() == selected.size()) {
+                                Intent shareIntent = new Intent();
+                                shareIntent.setAction(Intent.ACTION_SEND_MULTIPLE);
+                                shareIntent.putExtra(Intent.EXTRA_STREAM, "Share images");
+                                shareIntent.setType("image/*");
+                                shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, imageUris);
+                                startActivity(Intent.createChooser(shareIntent, null));
+                            }
+                        }
+
+                        @Override
+                        public void onLoadCleared(@Nullable Drawable placeholder) {}
+                    });
+
+
+                }
             }
         });
     }
