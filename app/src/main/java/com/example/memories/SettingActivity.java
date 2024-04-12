@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.ClipData;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -52,12 +53,13 @@ public class SettingActivity extends AppCompatActivity {
     TextView fullNameText, emailText;
     ImageButton backButton;
     String imageEncoded, deviceId;
-    List<String> imagesEncodedList;
     int fileNumber = 0;
     History history;
     User user;
     ArrayList<Media> media = new ArrayList<>();
-    CollectionReference dbUser, dbHistories, dbMedia;
+    CollectionReference dbUser, dbHistories, dbMedia, dbAlbum;
+    int PICK_IMAGE_MULTIPLE = 1;
+    ArrayList<Uri> imagesEncodedList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +76,7 @@ public class SettingActivity extends AppCompatActivity {
         dbUser = db.getDbUser();
         dbHistories = db.getDbHistories();
         dbMedia = db.getDbMedia();
+        dbAlbum = db.getDbAlbum();
 
         signOutBtn = findViewById(R.id.signoutButton);
         trashBtn = findViewById(R.id.trashBtn);
@@ -130,10 +133,12 @@ public class SettingActivity extends AppCompatActivity {
 
     private void chooseImages() {
         Intent intent = new Intent();
-        intent.setType("image/*");
+        intent.setType("*/*");
+        String[] mimeTypes = {"image/*", "video/*"};
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent,"Select Picture"), 1);
+        startActivityForResult(Intent.createChooser(intent,"Select Picture"), PICK_IMAGE_MULTIPLE);
     }
 
     public void addHistoryData() {
@@ -147,17 +152,23 @@ public class SettingActivity extends AppCompatActivity {
         return file.getName();
     }
 
-    public void uploadFile(String path) throws FileNotFoundException {
+    public String getMimeType(Uri uri) {
+        ContentResolver cR = getContentResolver();
+        String mime = cR.getType(uri);
+        return mime;
+    }
+
+    public void uploadFile(Uri uri) throws FileNotFoundException {
         StorageReference storageRef = storage.getReference();
 
         UUID uuid = UUID.randomUUID();
-        String childPath = user.getId() + "/" + uuid.toString() + "-" + getName(path);
+        String childPath = user.getId() + "/" + uuid.toString() + "-" + getName(uri.getPath());
         StorageReference mountainsRef = storageRef.child(childPath);
 
-        InputStream stream = new FileInputStream(new File(path));
+        InputStream stream = getContentResolver().openInputStream(uri);
         UploadTask uploadTask = mountainsRef.putStream(stream);
 
-        Media newMedia = new Media(user.getId(), history.getDate(), history.getId());
+        Media newMedia = new Media(user.getId(), history.getDate(), history.getId(), getMimeType(uri));
         uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
@@ -169,7 +180,7 @@ public class SettingActivity extends AppCompatActivity {
                         media.add(newMedia);
 
                         if (media.size() == fileNumber) {
-                            dbMedia.document(user.getDefaultAlbum().getId()).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                            dbAlbum.document(user.getDefaultAlbum().getId()).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                                 @Override
                                 public void onSuccess(DocumentSnapshot documentSnapshot) {
                                     Album album = documentSnapshot.toObject(Album.class);
@@ -177,7 +188,7 @@ public class SettingActivity extends AppCompatActivity {
                                     for (Media media : SettingActivity.this.media) {
                                         newMedia.add(media);
                                     }
-                                    dbMedia.document(user.getDefaultAlbum().getId()).update("photos", newMedia);
+                                    dbAlbum.document(user.getDefaultAlbum().getId()).update("photos", newMedia);
                                     Toast.makeText(SettingActivity.this, "Cập nhật thành công!", Toast.LENGTH_SHORT).show();
                                 }
                             });
@@ -196,33 +207,18 @@ public class SettingActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         try {
-            if (requestCode == 1 && resultCode == RESULT_OK && null != data) {
-                String[] filePathColumn = { MediaStore.Images.Media.DATA };
-                imagesEncodedList = new ArrayList<String>();
+            if (requestCode == PICK_IMAGE_MULTIPLE && resultCode == RESULT_OK && null != data) {
+                imagesEncodedList = new ArrayList<Uri>();
                 if (data.getData() != null){
-                    Uri mImageUri = data.getData();
-                    Cursor cursor = getContentResolver().query(mImageUri, filePathColumn, null, null, null);
-                    cursor.moveToFirst();
-
-                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                    imageEncoded  = cursor.getString(columnIndex);
-                    imagesEncodedList.add(imageEncoded);
-                    cursor.close();
+                    Uri uri = data.getData();
+                    imagesEncodedList.add(uri);
                 } else {
                     if (data.getClipData() != null) {
                         ClipData mClipData = data.getClipData();
-                        ArrayList<Uri> mArrayUri = new ArrayList<Uri>();
                         for (int i = 0; i < mClipData.getItemCount(); i++) {
                             ClipData.Item item = mClipData.getItemAt(i);
                             Uri uri = item.getUri();
-                            mArrayUri.add(uri);
-                            Cursor cursor = getContentResolver().query(uri, filePathColumn, null, null, null);
-                            cursor.moveToFirst();
-
-                            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                            imageEncoded  = cursor.getString(columnIndex);
-                            imagesEncodedList.add(imageEncoded);
-                            cursor.close();
+                            imagesEncodedList.add(uri);
                         }
                     }
                 }
