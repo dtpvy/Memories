@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DiscoverHomeAdapter extends RecyclerView.Adapter<DiscoverHomeAdapter.MyView> {
-    private ArrayList<DiscoverHomeView> list;
+    private ArrayList<Object> list;
     public class MyView extends RecyclerView.ViewHolder {
         TextView textView;
         ImageView imageView;
@@ -28,7 +28,7 @@ public class DiscoverHomeAdapter extends RecyclerView.Adapter<DiscoverHomeAdapte
         }
     }
 
-    public DiscoverHomeAdapter(ArrayList<DiscoverHomeView> horizontalList) {
+    public DiscoverHomeAdapter(ArrayList<Object> horizontalList) {
         this.list = horizontalList;
     }
 
@@ -42,7 +42,8 @@ public class DiscoverHomeAdapter extends RecyclerView.Adapter<DiscoverHomeAdapte
     public void onBindViewHolder(final MyView holder, final int position) {
         holder.textView.setText(list.get(position).getName());
         String imageUrl = list.get(position).getImgUrl();
-        Glide.with(holder.imageView).load(imageUrl).into(holder.imageView);
+        System.out.println(imageUrl);
+        Glide.with(holder.imageView).load(imageUrl).placeholder(R.drawable.stockphoto).into(holder.imageView);
     }
 
     @Override

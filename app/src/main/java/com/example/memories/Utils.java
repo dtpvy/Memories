@@ -30,4 +30,16 @@ public class Utils {
             return 0;
         }
     }
+
+    public static String formatSize(long bytes) {
+        if (bytes < 1024) {
+            return bytes + " bytes";
+        }
+        else if (bytes < 1024 * 1024) {
+            return (bytes / 1024) + " KB";
+        }
+        else {
+            return (bytes / (1024 * 1024)) + " MB";
+        }
+    }
 }

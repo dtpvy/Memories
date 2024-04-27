@@ -60,6 +60,7 @@ public class SettingActivity extends AppCompatActivity {
     CollectionReference dbUser, dbHistories, dbMedia, dbAlbum;
     int PICK_IMAGE_MULTIPLE = 1;
     ArrayList<Uri> imagesEncodedList;
+    ArrayList<CustomObject> customObject = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -147,6 +148,28 @@ public class SettingActivity extends AppCompatActivity {
         history = newHistory;
     }
 
+    public void createObject() {
+        CustomObjectDetect customObjectDetect = new CustomObjectDetect();
+        customObjectDetect.setCallback(new CustomObjectDetect.Callback() {
+            @Override
+            public void onCallback() {
+                dbAlbum.document(user.getDefaultAlbum().getId()).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                    @Override
+                    public void onSuccess(DocumentSnapshot documentSnapshot) {
+                        Album album = documentSnapshot.toObject(Album.class);
+                        ArrayList<Media> newMedia = album.getPhotos();
+                        for (Media media : SettingActivity.this.media) {
+                            newMedia.add(media);
+                        }
+                        dbAlbum.document(user.getDefaultAlbum().getId()).update("photos", newMedia);
+                        Toast.makeText(SettingActivity.this, "Cập nhật thành công!", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        });
+        customObjectDetect.detect(SettingActivity.this, customObject);
+    }
+
     public String getName(String path) {
         File file = new File(path);
         return file.getName();
@@ -178,20 +201,11 @@ public class SettingActivity extends AppCompatActivity {
                         newMedia.setImgUrl(uri.toString());
                         dbMedia.document(newMedia.getId()).set(newMedia);
                         media.add(newMedia);
-
+                        if (!newMedia.isVideo()) {
+                            customObject.add(new CustomObject(uri, newMedia));
+                        }
                         if (media.size() == fileNumber) {
-                            dbAlbum.document(user.getDefaultAlbum().getId()).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-                                @Override
-                                public void onSuccess(DocumentSnapshot documentSnapshot) {
-                                    Album album = documentSnapshot.toObject(Album.class);
-                                    ArrayList<Media> newMedia = album.getPhotos();
-                                    for (Media media : SettingActivity.this.media) {
-                                        newMedia.add(media);
-                                    }
-                                    dbAlbum.document(user.getDefaultAlbum().getId()).update("photos", newMedia);
-                                    Toast.makeText(SettingActivity.this, "Cập nhật thành công!", Toast.LENGTH_SHORT).show();
-                                }
-                            });
+                            createObject();
                         }
                     }
                 });

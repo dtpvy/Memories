@@ -85,7 +85,7 @@ public class PhotoInfoActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(StorageMetadata storageMetadata) {
                         long size = storageMetadata.getSizeBytes();
-                        info.setText("Size: " + size + " bytes  Type: " + storageMetadata.getContentType() );
+                        info.setText("Size: " + Utils.formatSize(size) + "  Type: " + storageMetadata.getContentType() );
                     }
                 });
 

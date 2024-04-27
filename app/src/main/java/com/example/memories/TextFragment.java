@@ -18,19 +18,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.github.naz013.colorslider.ColorSlider;
-
-import org.checkerframework.checker.units.qual.A;
-
-import java.sql.Array;
-import java.util.ArrayList;
-
-import ja.burhanrashid52.photoeditor.OnPhotoEditorListener;
 import ja.burhanrashid52.photoeditor.PhotoEditor;
-import ja.burhanrashid52.photoeditor.ViewType;
 
 public class TextFragment extends Fragment implements FragmentCallbacks {
     PhotoEditorActivity main;

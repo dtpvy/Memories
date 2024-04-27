@@ -9,6 +9,7 @@ public class Database {
     CollectionReference dbMedia;
     CollectionReference dbUser;
     CollectionReference dbHistories;
+    CollectionReference dbObject;
 
     public Database() {
         db = FirebaseFirestore.getInstance();
@@ -16,6 +17,7 @@ public class Database {
         dbMedia = db.collection("media");
         dbUser = db.collection("users");
         dbHistories = db.collection("histories");
+        dbObject = db.collection("objects");
     }
 
     public FirebaseFirestore getDb() {
@@ -37,4 +39,6 @@ public class Database {
     public CollectionReference getDbHistories() {
         return dbHistories;
     }
+
+    public CollectionReference getDbObject() { return dbObject; }
 }
