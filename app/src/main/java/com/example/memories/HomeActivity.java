@@ -25,17 +25,18 @@ import com.google.firebase.firestore.QuerySnapshot;
 import java.util.ArrayList;
 
 public class HomeActivity extends AppCompatActivity {
-    ArrayList<DiscoverHomeView> discovers = new ArrayList<>();
     ArrayList<Album> albums;
     ArrayList<Media> media;
+    ArrayList<Object> objects;
     ImageButton addButton, settingButton;
     Button seeAlbumButton;
     User user;
     TextView totalPhoto;
     AlertDialog createAlbumDialog;
-    RecyclerView photosView, albumView;
+    RecyclerView photosView, albumView, discoverView;
     PhotoHomeAdapter photoHomeAdapter;
-    CollectionReference dbAlbum, dbMedia;
+    DiscoverHomeAdapter discoverHomeAdapter;
+    CollectionReference dbAlbum, dbMedia, dbObject;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,21 +46,16 @@ public class HomeActivity extends AppCompatActivity {
         Database db = new Database();
         dbAlbum = db.getDbAlbum();
         dbMedia = db.getDbMedia();
+        dbObject = db.getDbObject();
         user = new User().getUser(this);
 
         totalPhoto = findViewById(R.id.totalPhoto);
         createAlbumDialog = createAlbum();
 
-        discovers.add(new DiscoverHomeView("https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg?cs=srgb&dl=pexels-james-wheeler-414612.jpg&fm=jpg", "A"));
-        discovers.add(new DiscoverHomeView("https://media.macphun.com/img/uploads/customer/how-to/608/15542038745ca344e267fb80.28757312.jpg?q=85&w=1340", "B"));
-        discovers.add(new DiscoverHomeView("https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg?cs=srgb&dl=pexels-james-wheeler-414612.jpg&fm=jpg", "C"));
-
-        RecyclerView discoverView = (RecyclerView) findViewById(R.id.discoverView);
+        discoverView = (RecyclerView) findViewById(R.id.discoverView);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
         discoverView.setLayoutManager(layoutManager);
-        DiscoverHomeAdapter discoverHomeAdapter = new DiscoverHomeAdapter(discovers);
-        discoverView.setAdapter(discoverHomeAdapter);
 
         photosView = (RecyclerView) findViewById(R.id.photosView);
         StaggeredGridLayoutManager gridLayoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
@@ -105,6 +101,7 @@ public class HomeActivity extends AppCompatActivity {
         super.onResume();
         this.getAlbumData();
         this.getPhotos();
+        this.getObjects();
     }
 
     public void getPhotos() {
@@ -120,6 +117,24 @@ public class HomeActivity extends AppCompatActivity {
                             }
                             photoHomeAdapter.setData(media);
                             totalPhoto.setText(media.size() + " photos");
+                        }
+                    }
+                });
+    }
+
+    public void getObjects() {
+        objects = new ArrayList<>();
+        dbObject.whereEqualTo("userId", user.getId()).get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()) {
+                            for (QueryDocumentSnapshot document : task.getResult()) {
+                                Object object = document.toObject(Object.class);
+                                objects.add(object);
+                            }
+                            discoverHomeAdapter = new DiscoverHomeAdapter(objects);
+                            discoverView.setAdapter(discoverHomeAdapter);
                         }
                     }
                 });

@@ -390,7 +390,7 @@ public class PhotoEditorActivity extends FragmentActivity implements PhotoEditor
         Media newMedia = new Media(user.getId(), new Date());
         String childPath = newMedia.getUserId() + "/" + newMedia.getId() + ".png";
         StorageReference mountainsRef = storageRef.child(childPath);
-        System.out.println(childPath);
+
         UploadTask uploadTask = mountainsRef.putBytes(data);
         uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override

@@ -1,5 +1,6 @@
 package com.example.memories;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.UUID;
 
@@ -11,6 +12,7 @@ public class Media {
     private Date createdAt;
     private String historyId;
     private Date deletedAt;
+    private ArrayList<String> labels;
 
     public Media() {}
 
@@ -21,6 +23,7 @@ public class Media {
         this.imgUrl = imgUrl;
         this.createdAt = createdAt;
         this.type = type;
+        this.labels = new ArrayList<>();
     }
 
     public Media(String userId, Date createdAt, String historyId, String type) {
@@ -29,6 +32,7 @@ public class Media {
         this.historyId = historyId;
         this.createdAt = createdAt;
         this.type = type;
+        this.labels = new ArrayList<>();
     }
 
     public Media(String imgUrl, Date createdAt, String type) {
@@ -36,12 +40,14 @@ public class Media {
         this.imgUrl = imgUrl;
         this.createdAt = createdAt;
         this.type = type;
+        this.labels = new ArrayList<>();
     }
 
     public Media(String userId, Date createdAt) {
         this.id = UUID.randomUUID().toString();
         this.createdAt = createdAt;
         this.userId = userId;
+        this.labels = new ArrayList<>();
     }
 
     public String getImgUrl() {
@@ -98,5 +104,13 @@ public class Media {
 
     public boolean isVideo() {
         return this.type.contains("video");
+    }
+
+    public ArrayList<String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(ArrayList<String> labels) {
+        this.labels = labels;
     }
 }

@@ -34,8 +34,6 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firestore.v1.StructuredQuery;
 import com.google.gson.Gson;
 
-import org.checkerframework.checker.units.qual.A;
-
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;

@@ -9,16 +9,12 @@ import android.content.ClipData;
 import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.provider.Settings;
-import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.View;
-import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -34,6 +30,7 @@ import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
@@ -62,6 +59,7 @@ public class OnBoardingActivity extends AppCompatActivity {
     Album defaultAlbum;
     ArrayList<Media> media = new ArrayList<>();
     CollectionReference dbAlbum, dbMedia, dbUser, dbHistories;
+    ArrayList<CustomObject> customObject = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -234,6 +232,17 @@ public class OnBoardingActivity extends AppCompatActivity {
         OnBoardingActivity.this.finish();
     }
 
+    public void createObject() {
+        CustomObjectDetect customObjectDetect = new CustomObjectDetect();
+        customObjectDetect.setCallback(new CustomObjectDetect.Callback() {
+            @Override
+            public void onCallback() {
+                syncSuccess();
+            }
+        });
+        customObjectDetect.detect(OnBoardingActivity.this, customObject);
+    }
+
     public void addHistoryData() {
         if (user == null) return;
         defaultAlbum = new Album(user.getId());
@@ -265,12 +274,15 @@ public class OnBoardingActivity extends AppCompatActivity {
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                 taskSnapshot.getMetadata().getReference().getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                     @Override
-                    public void onSuccess(Uri uri) {
-                        newMedia.setImgUrl(uri.toString());
+                    public void onSuccess(Uri firebaseUri) {
+                        newMedia.setImgUrl(firebaseUri.toString());
                         dbMedia.document(newMedia.getId()).set(newMedia);
                         media.add(newMedia);
+                        if (!newMedia.isVideo()) {
+                            customObject.add(new CustomObject(uri, newMedia));
+                        }
                         if (media.size() == fileNumber) {
-                            syncSuccess();
+                            createObject();
                         }
                     }
                 });
