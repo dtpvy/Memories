@@ -19,6 +19,9 @@
         android:theme="@style/Theme.Memories"
         tools:targetApi="31">
         <activity
+            android:name=".DiscoveryActivity"
+            android:exported="false" />
+        <activity
             android:name=".PhotoInfoActivity"
             android:exported="false" />
         <activity

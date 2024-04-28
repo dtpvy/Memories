@@ -88,7 +88,7 @@ public class PhotoDetailActivity extends AppCompatActivity {
         wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
 
         loadData();
-        if (albumId.contains("trash")) {
+        if (albumId != null &&  albumId.contains("trash")) {
             loadAlbum();
             photoControl.setVisibility(View.GONE);
             trashControl.setVisibility(View.VISIBLE);

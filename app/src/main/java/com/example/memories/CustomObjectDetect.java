@@ -131,10 +131,13 @@ public class CustomObjectDetect {
                                             Rect boundingBox = detectedObject.getBoundingBox();
                                             List<DetectedObject.Label> labels = detectedObject.getLabels();
                                             String name = labels.size() > 0 ? labels.get(0).getText() : "Unknown";
+                                            System.out.println(name);
                                             Object object = findObject(name);
                                             if (name.compareTo("Unknown") != 0) {
                                                 photoLabels.add(name);
                                             }
+                                            int idx = photoLabels.indexOf(name);
+                                            if (idx < 0) photoLabels.add(name);
                                             if (object == null) {
                                                 Object newObject = new Object(user.getId(), name);
                                                 newObject.getPhotos().add(customObject.getMedia());
@@ -144,7 +147,9 @@ public class CustomObjectDetect {
                                                     createImage(bitmap, newObject, objects.size()-1);
                                                 } catch (IOException e) {}
                                             } else {
-                                                object.getPhotos().add(customObject.getMedia());
+                                                if (idx < 0) {
+                                                    object.getPhotos().add(customObject.getMedia());
+                                                }
                                             }
                                         }
                                         dbMedia.document(customObject.getMedia().getId()).update("labels", photoLabels);
@@ -173,10 +178,8 @@ public class CustomObjectDetect {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
                 if (task.isSuccessful()) {
-                    ArrayList<Object> objects = new ArrayList<>();
                     for (QueryDocumentSnapshot queryDocumentSnapshot: task.getResult()) {
                         Object object = queryDocumentSnapshot.toObject(Object.class);
-                        System.out.println(object.getId());
                         objects.add(object);
                     }
                     solve(context, customObjects);
