@@ -197,8 +197,8 @@ public class SettingActivity extends AppCompatActivity {
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                 taskSnapshot.getMetadata().getReference().getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                     @Override
-                    public void onSuccess(Uri uri) {
-                        newMedia.setImgUrl(uri.toString());
+                    public void onSuccess(Uri _uri) {
+                        newMedia.setImgUrl(_uri.toString());
                         dbMedia.document(newMedia.getId()).set(newMedia);
                         media.add(newMedia);
                         if (!newMedia.isVideo()) {

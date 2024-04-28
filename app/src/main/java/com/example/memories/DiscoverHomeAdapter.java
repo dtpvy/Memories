@@ -1,5 +1,7 @@
 package com.example.memories;
 
+import android.content.Context;
+import android.content.Intent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -16,6 +18,7 @@ import java.util.List;
 
 public class DiscoverHomeAdapter extends RecyclerView.Adapter<DiscoverHomeAdapter.MyView> {
     private ArrayList<Object> list;
+    private Context context;
     public class MyView extends RecyclerView.ViewHolder {
         TextView textView;
         ImageView imageView;
@@ -28,8 +31,14 @@ public class DiscoverHomeAdapter extends RecyclerView.Adapter<DiscoverHomeAdapte
         }
     }
 
-    public DiscoverHomeAdapter(ArrayList<Object> horizontalList) {
-        this.list = horizontalList;
+    public DiscoverHomeAdapter(Context context) {
+        this.context = context;
+        this.list = new ArrayList<>();
+    }
+
+    public void setList(ArrayList<Object> list) {
+        this.list = list;
+        notifyDataSetChanged();
     }
 
     @Override
@@ -42,8 +51,16 @@ public class DiscoverHomeAdapter extends RecyclerView.Adapter<DiscoverHomeAdapte
     public void onBindViewHolder(final MyView holder, final int position) {
         holder.textView.setText(list.get(position).getName());
         String imageUrl = list.get(position).getImgUrl();
-        System.out.println(imageUrl);
         Glide.with(holder.imageView).load(imageUrl).placeholder(R.drawable.stockphoto).into(holder.imageView);
+
+        holder.imageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(context, DiscoveryActivity.class);
+                intent.putExtra("objectId", list.get(holder.getAdapterPosition()).getId());
+                context.startActivity(intent);
+            }
+        });
     }
 
     @Override

@@ -56,6 +56,8 @@ public class HomeActivity extends AppCompatActivity {
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
         discoverView.setLayoutManager(layoutManager);
+        discoverHomeAdapter = new DiscoverHomeAdapter(HomeActivity.this);
+        discoverView.setAdapter(discoverHomeAdapter);
 
         photosView = (RecyclerView) findViewById(R.id.photosView);
         StaggeredGridLayoutManager gridLayoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
@@ -133,8 +135,7 @@ public class HomeActivity extends AppCompatActivity {
                                 Object object = document.toObject(Object.class);
                                 objects.add(object);
                             }
-                            discoverHomeAdapter = new DiscoverHomeAdapter(objects);
-                            discoverView.setAdapter(discoverHomeAdapter);
+                            discoverHomeAdapter.setList(objects);
                         }
                     }
                 });
