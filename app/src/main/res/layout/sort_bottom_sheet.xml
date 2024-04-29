@@ -4,16 +4,12 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/border" />
-
     <TextView
+        android:id="@+id/nameAsc"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp"
-        android:text="Thep tên A - Z"/>
+        android:text="Theo tên A - Z"/>
 
     <View
         android:layout_width="match_parent"
@@ -21,10 +17,11 @@
         android:background="@color/border" />
 
     <TextView
+        android:id="@+id/nameDesc"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp"
-        android:text="Thep tên Z - A"/>
+        android:text="Theo tên Z - A"/>
 
     <View
         android:layout_width="match_parent"
@@ -32,6 +29,7 @@
         android:background="@color/border" />
 
     <TextView
+        android:id="@+id/dateDesc"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp"
@@ -43,6 +41,7 @@
         android:background="@color/border" />
 
     <TextView
+        android:id="@+id/dateAsc"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp"

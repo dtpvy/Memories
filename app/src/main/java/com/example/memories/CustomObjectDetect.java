@@ -131,7 +131,6 @@ public class CustomObjectDetect {
                                             Rect boundingBox = detectedObject.getBoundingBox();
                                             List<DetectedObject.Label> labels = detectedObject.getLabels();
                                             String name = labels.size() > 0 ? labels.get(0).getText() : "Unknown";
-                                            System.out.println(name);
                                             Object object = findObject(name);
                                             if (name.compareTo("Unknown") != 0) {
                                                 photoLabels.add(name);

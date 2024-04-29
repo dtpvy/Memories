@@ -2,6 +2,7 @@ package com.example.memories;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
@@ -11,6 +12,8 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -26,6 +29,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.gson.Gson;
@@ -43,7 +47,7 @@ public class PhotoActivity extends AppCompatActivity {
     ArrayList<PhotoList> photoLists = new ArrayList<>();
     ArrayList<Media> selected = new ArrayList<>();
     Album album;
-    ImageView backBtn, selectAllBtn;
+    ImageView backBtn, selectAllBtn, moreBtn;
     TextView albumName, chooseText;
     User user;
     ListView listView;
@@ -54,6 +58,7 @@ public class PhotoActivity extends AppCompatActivity {
     String albumId;
     ImageAction imageAction;
     CollectionReference dbAlbum, dbMedia;
+    Boolean isAsc = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -176,6 +181,14 @@ public class PhotoActivity extends AppCompatActivity {
 
 
                 }
+            }
+        });
+
+        moreBtn = findViewById(R.id.moreBtn);
+        moreBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showSort();
             }
         });
     }
@@ -365,5 +378,53 @@ public class PhotoActivity extends AppCompatActivity {
                 }
         ).start();
         Toast.makeText(PhotoActivity.this, "Tải xuống thành công", Toast.LENGTH_SHORT).show();
+    }
+
+    public void showSort() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(PhotoActivity.this);
+        builder.setTitle("Sắp xếp");
+        LayoutInflater inflater = this.getLayoutInflater();
+        View view = inflater.inflate(R.layout.sort_bottom_sheet, null);
+        AlertDialog dialog = builder.setView(view).create();
+
+        TextView nameAsc = view.findViewById(R.id.nameAsc);
+        TextView nameDesc = view.findViewById(R.id.nameDesc);
+        TextView dateAsc = view.findViewById(R.id.dateAsc);
+        TextView dateDesc = view.findViewById(R.id.dateDesc);
+
+        nameAsc.setVisibility(View.GONE);
+        nameDesc.setVisibility(View.GONE);
+
+        dateAsc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (!isAsc) {
+                    isAsc = true;
+                    List<PhotoList> aList = new ArrayList<>(photoLists);
+                    Collections.reverse(aList);
+                    photoLists = new ArrayList<>(aList);
+                    photoListAdapter.setPhotoLists(photoLists);
+                    dialog.dismiss();
+                }
+            }
+        });
+
+        dateDesc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (isAsc) {
+                    isAsc = false;
+                    List<PhotoList> aList = new ArrayList<>(photoLists);
+                    Collections.reverse(aList);
+                    photoLists = new ArrayList<>(aList);
+                    photoListAdapter.setPhotoLists(photoLists);
+                    dialog.dismiss();
+                }
+            }
+        });
+
+
+        dialog.show();
+        dialog.getWindow().setGravity(Gravity.BOTTOM);
     }
 }

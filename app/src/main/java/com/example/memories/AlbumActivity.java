@@ -13,6 +13,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -29,6 +30,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
@@ -46,7 +48,7 @@ import java.util.UUID;
 public class AlbumActivity extends AppCompatActivity {
     ArrayList<Album> albums = new ArrayList<>();
     ArrayList<Album> selected = new ArrayList<>();;
-    ImageButton backBtn;
+    ImageButton backBtn, moreBtn;
     User user;
     RecyclerView albumView;
     ConstraintLayout albumControl;
@@ -80,12 +82,13 @@ public class AlbumActivity extends AppCompatActivity {
         archiveBtn = findViewById(R.id.archiveAlbum);
         cancelBtn = findViewById(R.id.cancelAction);
         selectAllBtn = findViewById(R.id.selectAllAlbum);
+        moreBtn = findViewById(R.id.moreBtn);
 
         albumView = findViewById(R.id.albumList);
         GridLayoutManager albumLayoutManager = new GridLayoutManager(this, 3);
         albumView.setLayoutManager(albumLayoutManager);
 
-        loadData();
+        loadData("createdAt", Query.Direction.ASCENDING);
 
         backBtn = findViewById(R.id.backBtn);
         backBtn.setOnClickListener(new View.OnClickListener() {
@@ -130,7 +133,7 @@ public class AlbumActivity extends AppCompatActivity {
                 albumControl.setVisibility(View.INVISIBLE);
                 albumView.setPadding(0, 0, 0, 0);
                 albumHomeAdapter.setShowCheck(false);
-                loadData();
+                loadData("createdAt", Query.Direction.ASCENDING);
             }
         });
 
@@ -142,11 +145,18 @@ public class AlbumActivity extends AppCompatActivity {
                 editAlbumDialog.show();
             }
         });
+
+        moreBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showSort();
+            }
+        });
     }
 
-    public void loadData() {
+    public void loadData(String field, Query.Direction direction) {
         albums = new ArrayList<>();
-        dbAlbum.whereEqualTo("userId", user.getId()).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+        dbAlbum.whereEqualTo("userId", user.getId()).orderBy(field, direction).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
                 if (task.isSuccessful()) {
@@ -206,7 +216,7 @@ public class AlbumActivity extends AppCompatActivity {
                         albumControl.setVisibility(View.INVISIBLE);
                         albumView.setPadding(0, 0, 0, 0);
                         albumHomeAdapter.setShowCheck(false);
-                        loadData();
+                        loadData("createdAt", Query.Direction.ASCENDING);
                     }
                 })
                 .setNegativeButton("Huỷ", new DialogInterface.OnClickListener() {
@@ -328,7 +338,7 @@ public class AlbumActivity extends AppCompatActivity {
                     dialog.dismiss();
                     dbAlbum.document(selected.get(0).getId()).update("name", nameInput.getText().toString());
                     dbAlbum.document(selected.get(0).getId()).update("imgUrl", editPath);
-                    loadData();
+                    loadData("createdAt", Query.Direction.ASCENDING);
 
                     albumControl.setVisibility(View.INVISIBLE);
                     albumView.setPadding(0, 0, 0, 0);
@@ -349,5 +359,50 @@ public class AlbumActivity extends AppCompatActivity {
         });
 
         return dialog;
+    }
+
+    public void showSort() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(AlbumActivity.this);
+        builder.setTitle("Sắp xếp");
+        LayoutInflater inflater = this.getLayoutInflater();
+        View view = inflater.inflate(R.layout.sort_bottom_sheet, null);
+        AlertDialog dialog = builder.setView(view).create();
+
+        TextView nameAsc = view.findViewById(R.id.nameAsc);
+        TextView nameDesc = view.findViewById(R.id.nameDesc);
+        TextView dateAsc = view.findViewById(R.id.dateAsc);
+        TextView dateDesc = view.findViewById(R.id.dateDesc);
+
+        nameAsc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                loadData("name", Query.Direction.ASCENDING);
+            }
+        });
+
+        nameDesc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                loadData("name", Query.Direction.DESCENDING);
+            }
+        });
+
+        dateAsc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                loadData("createdAt", Query.Direction.ASCENDING);
+            }
+        });
+
+        dateDesc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                loadData("createdAt", Query.Direction.DESCENDING);
+            }
+        });
+
+
+        dialog.show();
+        dialog.getWindow().setGravity(Gravity.BOTTOM);
     }
 }

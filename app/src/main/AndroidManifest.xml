@@ -19,6 +19,15 @@
         android:theme="@style/Theme.Memories"
         tools:targetApi="31">
         <activity
+            android:name=".VideoEditorActivity"
+            android:exported="false" />
+        <activity
+            android:name=".VideoActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AnalyticsActivity"
+            android:exported="false" />
+        <activity
             android:name=".DiscoveryActivity"
             android:exported="false" />
         <activity
