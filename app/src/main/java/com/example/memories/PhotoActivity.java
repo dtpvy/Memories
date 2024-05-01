@@ -6,6 +6,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
@@ -21,6 +22,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.andrognito.patternlockview.PatternLockView;
+import com.andrognito.patternlockview.listener.PatternLockViewListener;
+import com.andrognito.patternlockview.utils.PatternLockUtils;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
@@ -47,7 +51,7 @@ public class PhotoActivity extends AppCompatActivity {
     ArrayList<PhotoList> photoLists = new ArrayList<>();
     ArrayList<Media> selected = new ArrayList<>();
     Album album;
-    ImageView backBtn, selectAllBtn, moreBtn;
+    ImageView backBtn, selectAllBtn, moreBtn, editBtn;
     TextView albumName, chooseText;
     User user;
     ListView listView;
@@ -55,9 +59,9 @@ public class PhotoActivity extends AppCompatActivity {
     LinearLayout addBtn, trashBtn, downBtn, restoreBtn, deleteBtn, shareBtn;
     Boolean isEdit = false;
     PhotoListAdapter photoListAdapter;
-    String albumId;
+    String albumId, password = "";
     ImageAction imageAction;
-    CollectionReference dbAlbum, dbMedia;
+    CollectionReference dbAlbum, dbMedia, dbUser;
     Boolean isAsc = true;
 
     @Override
@@ -70,6 +74,7 @@ public class PhotoActivity extends AppCompatActivity {
         Database db = new Database();
         dbAlbum = db.getDbAlbum();
         dbMedia = db.getDbMedia();
+        dbUser = db.getDbUser();
 
         user = new User().getUser(this);
         Intent intent = getIntent();
@@ -79,6 +84,17 @@ public class PhotoActivity extends AppCompatActivity {
         listView = findViewById(R.id.photoList);
         chooseText = findViewById(R.id.chooseText);
         shareBtn = findViewById(R.id.sharePhoto);
+        editBtn = findViewById(R.id.editPassword);
+
+        if (user.getPrivateAlbum().getId().compareTo(albumId) == 0) {
+            editBtn.setVisibility(View.VISIBLE);
+            editBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    showPassword();
+                }
+            });
+        }
 
         if (albumId.compareTo("trash") != 0) {
             photoControl = findViewById(R.id.photoControl);
@@ -423,8 +439,56 @@ public class PhotoActivity extends AppCompatActivity {
             }
         });
 
-
         dialog.show();
         dialog.getWindow().setGravity(Gravity.BOTTOM);
+    }
+
+    public void showPassword() {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        LayoutInflater inflater = this.getLayoutInflater();
+        View view = inflater.inflate(R.layout.private_album, null);
+        android.app.AlertDialog dialog = builder.setView(view).create();
+        dialog.setTitle("Nhập mật khẩu mới");
+
+        PatternLockView mPatternLockView = view.findViewById(R.id.pattern_lock_view);
+        mPatternLockView.addPatternLockListener(new PatternLockViewListener() {
+            @Override
+            public void onStarted() {}
+
+            @Override
+            public void onProgress(List<PatternLockView.Dot> progressPattern) {}
+
+            @Override
+            public void onComplete(List<PatternLockView.Dot> pattern) {
+                String value = PatternLockUtils.patternToString(mPatternLockView, pattern);
+                if (password.length() == 0) {
+                    password = value;
+                    dialog.setTitle("Xác nhận mật khẩu");
+                    mPatternLockView.clearPattern();
+                } else {
+                    if (password.compareTo(value) != 0) {
+                        mPatternLockView.setViewMode(PatternLockView.PatternViewMode.WRONG);
+                    } else {
+                        user.setPassword(value);
+                        dbUser.document(user.getId()).update("password", value);
+                        Toast.makeText(PhotoActivity.this, "Update successfully!", Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
+                    }
+                }
+            }
+            @Override
+            public void onCleared() {
+
+            }
+        });
+
+        dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialogInterface) {
+                password = "";
+            }
+        });
+
+        dialog.show();
     }
 }

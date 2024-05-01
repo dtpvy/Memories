@@ -13,6 +13,7 @@ public class User {
     private Album defaultAlbum;
     private Album privateAlbum;
     private Album favouriteAlbum;
+    private String password;
 
     public User() {}
 
@@ -98,5 +99,13 @@ public class User {
         Gson gson = new Gson();
         User user = gson.fromJson(data, User.class);
         return user;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getPassword() {
+        return password;
     }
 }

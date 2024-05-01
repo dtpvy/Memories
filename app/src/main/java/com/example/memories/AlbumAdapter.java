@@ -63,9 +63,7 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.MyView> {
         holder.imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(context, PhotoActivity.class);
-                intent.putExtra("album_id", list.get(holder.getAdapterPosition()).getId());
-                context.startActivity(intent);
+                callback.onClick(list.get(holder.getAdapterPosition()));
             }
         });
         holder.imageView.setOnLongClickListener(new View.OnLongClickListener() {
@@ -126,6 +124,7 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.MyView> {
         void onLongClick();
         void onCheck(ArrayList<Album> albums);
         void onCheckAll(ArrayList<Album> albums);
+        void onClick(Album album);
     }
 
     @Override
