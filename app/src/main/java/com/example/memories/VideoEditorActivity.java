@@ -13,6 +13,7 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.MediaController;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.VideoView;
 
 import com.google.android.gms.tasks.OnFailureListener;
@@ -33,6 +34,11 @@ import java.util.Date;
 import java.util.UUID;
 
 import ja.burhanrashid52.photoeditor.PhotoEditor;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class VideoEditorActivity extends AppCompatActivity {
     VideoView videoView;
@@ -69,19 +75,19 @@ public class VideoEditorActivity extends AppCompatActivity {
         cancelBtn = findViewById(R.id.cancelBtn);
         saveBtn = findViewById(R.id.saveBtn);
         cutBtn = findViewById(R.id.cutBtn);
-        lightBtn = findViewById(R.id.lightBtn);
-        emojiBtn = findViewById(R.id.emojiBtn);
-        textBtn = findViewById(R.id.textBtn);
         effectBtn = findViewById(R.id.effectBtn);
 
         cutBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (videoView != null){
-                    videoView.stopPlayback();
-                    videoView.setVideoURI(null);
-                }
                 trimVideo();
+            }
+        });
+
+        effectBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                effectVideo();
             }
         });
 
@@ -108,19 +114,45 @@ public class VideoEditorActivity extends AppCompatActivity {
             public void onClick(View view) {
                 if (files.size() == 0) {
                     FirebaseStorage storage = FirebaseStorage.getInstance();
-                    StorageReference videoRef = storage.getReferenceFromUrl(media.getImgUrl());
+                    StorageReference storageRef = storage.getReference();
 
-                    final File localFile;
-                    try {
-                        localFile = File.createTempFile("videos", "mp4");
-                        videoRef.getFile(localFile).addOnSuccessListener(taskSnapshot -> {
-                            try {
-                                uploadFile(Uri.parse(localFile.getPath()));
-                            } catch (FileNotFoundException e) {}
-                        }).addOnFailureListener(e -> {
-                            // Handle any errors
-                        });
-                    } catch (IOException e) {}
+                    Media newMedia = new Media(user.getId(), new Date(), media.getType());
+                    String childPath = user.getId() + "/" + newMedia.getId() + ".mp4";
+                    StorageReference videoRef = storageRef.child(childPath);
+
+                    OkHttpClient client = new OkHttpClient();
+                    Request request = new Request.Builder().url(media.getImgUrl()).build();
+
+                    client.newCall(request).enqueue(new Callback() {
+                        @Override
+                        public void onFailure(Call call, IOException e) {
+                            e.printStackTrace();
+                        }
+
+                        @Override
+                        public void onResponse(Call call, Response response) throws IOException {
+                            if (response.isSuccessful()) {
+                                byte[] videoBytes = response.body().bytes();
+                                UploadTask uploadTask = videoRef.putBytes(videoBytes);
+                                uploadTask.addOnSuccessListener(taskSnapshot -> {
+                                    videoRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                                        newMedia.setImgUrl(uri.toString());
+                                        dbMedia.document(newMedia.getId()).set(newMedia);
+                                        dbAlbum.document(albumId).update("photos", FieldValue.arrayUnion(newMedia));
+                                        Intent intent = new Intent(VideoEditorActivity.this, VideoActivity.class);
+                                        intent.putExtra("media_id", newMedia.getId());
+                                        intent.putExtra("album_id", albumId);
+                                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
+                                        VideoEditorActivity.this.startActivity(intent);
+                                        VideoEditorActivity.this.finish();
+                                        Toast.makeText(VideoEditorActivity.this, "Save successfully!", Toast.LENGTH_LONG);
+                                    });
+                                }).addOnFailureListener(e -> {});
+                            } else {
+                                throw new IOException("Failed to download file: " + response);
+                            }
+                        }
+                    });
                 } else {
                     try {
                         uploadFile(files.get(files.size()-1));
@@ -176,6 +208,7 @@ public class VideoEditorActivity extends AppCompatActivity {
                         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
                         VideoEditorActivity.this.startActivity(intent);
                         VideoEditorActivity.this.finish();
+                        Toast.makeText(VideoEditorActivity.this, "Save successfully!", Toast.LENGTH_LONG);
                     }
                 });
             }
@@ -187,7 +220,39 @@ public class VideoEditorActivity extends AppCompatActivity {
         });
     }
 
-    void trimVideo() {
+    public void effectVideo() {
+        if (files.size() > 0) {
+            Intent intent = new Intent(VideoEditorActivity.this, FilterVideoActivity.class);
+            intent.putExtra("url", files.get(files.size()-1).getPath());
+            VideoEditorActivity.this.startActivityForResult(intent, 0);
+            return;
+        }
+
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+        StorageReference videoRef = storage.getReferenceFromUrl(media.getImgUrl());
+
+        final File localFile;
+        try {
+            localFile = File.createTempFile("videos", "mp4");
+            videoRef.getFile(localFile).addOnSuccessListener(taskSnapshot -> {
+                // File downloaded successfully
+                Intent intent = new Intent(VideoEditorActivity.this, FilterVideoActivity.class);
+                intent.putExtra("url", localFile.getPath());
+                VideoEditorActivity.this.startActivityForResult(intent, 0);
+            }).addOnFailureListener(e -> {
+                // Handle any errors
+            });
+        } catch (IOException e) {}
+    }
+
+    public void trimVideo() {
+        if (files.size() > 0) {
+            Intent intent = new Intent(VideoEditorActivity.this, TrimVideoActivity.class);
+            intent.putExtra("url", files.get(files.size()-1).getPath());
+            VideoEditorActivity.this.startActivityForResult(intent, 0);
+            return;
+        }
+
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference videoRef = storage.getReferenceFromUrl(media.getImgUrl());
 

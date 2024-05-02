@@ -35,12 +35,10 @@ public class TrimVideoActivity extends AppCompatActivity implements OnTrimVideoL
 
         mVideoTrimmer = ((K4LVideoTrimmer) findViewById(R.id.trim_video_view_trim_video_ac));
         if (mVideoTrimmer != null) {
-            mVideoTrimmer.setMaxDuration(60);
             mVideoTrimmer.setOnTrimVideoListener(this);
             mVideoTrimmer.setOnTrimVideoListener(this);
             mVideoTrimmer.setDestinationPath("/storage/emulated/0/Download/");
             mVideoTrimmer.setVideoURI(Uri.parse(path));
-
         }
     }
 
