@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -18,7 +19,9 @@ import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -28,7 +31,7 @@ public class HomeActivity extends AppCompatActivity {
     ArrayList<Album> albums;
     ArrayList<Media> media;
     ArrayList<Object> objects;
-    ImageButton addButton, settingButton;
+    ImageButton addButton, settingButton, sortBtn, searchBtn;
     Button seeAlbumButton;
     User user;
     TextView totalPhoto;
@@ -96,19 +99,36 @@ public class HomeActivity extends AppCompatActivity {
                 view.getContext().startActivity(intent);
             }
         });
+
+        sortBtn = findViewById(R.id.sortButton);
+        sortBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showSort();
+            }
+        });
+
+        searchBtn = findViewById(R.id.searchButton);
+        searchBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(HomeActivity.this, SearchActivity.class);
+                HomeActivity.this.startActivity(intent);
+            }
+        });
     }
 
     @Override
     public void onResume(){
         super.onResume();
         this.getAlbumData();
-        this.getPhotos();
+        this.getPhotos("createdAt", Query.Direction.DESCENDING);
         this.getObjects();
     }
 
-    public void getPhotos() {
+    public void getPhotos(String field, Query.Direction direction) {
         media = new ArrayList<>();
-        dbMedia.whereEqualTo("userId", user.getId()).whereEqualTo("deletedAt", null).get()
+        dbMedia.whereEqualTo("userId", user.getId()).whereEqualTo("deletedAt", null).orderBy(field, direction).get()
                 .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
@@ -218,5 +238,50 @@ public class HomeActivity extends AppCompatActivity {
             }
         }
         return true;
+    }
+
+    public void showSort() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(HomeActivity.this);
+        builder.setTitle("Sắp xếp");
+        LayoutInflater inflater = this.getLayoutInflater();
+        View view = inflater.inflate(R.layout.sort_bottom_sheet, null);
+        AlertDialog dialog = builder.setView(view).create();
+
+        TextView nameAsc = view.findViewById(R.id.nameAsc);
+        TextView nameDesc = view.findViewById(R.id.nameDesc);
+        TextView dateAsc = view.findViewById(R.id.dateAsc);
+        TextView dateDesc = view.findViewById(R.id.dateDesc);
+
+        nameAsc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                getPhotos("id", Query.Direction.ASCENDING);
+            }
+        });
+
+        nameDesc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                getPhotos("id", Query.Direction.DESCENDING);
+            }
+        });
+
+        dateAsc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                getPhotos("createdAt", Query.Direction.ASCENDING);
+            }
+        });
+
+        dateDesc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                getPhotos("createdAt", Query.Direction.DESCENDING);
+            }
+        });
+
+
+        dialog.show();
+        dialog.getWindow().setGravity(Gravity.BOTTOM);
     }
 }

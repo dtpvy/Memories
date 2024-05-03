@@ -21,7 +21,7 @@ import java.util.Locale;
 
 public class PhotoListAdapter extends ArrayAdapter<PhotoList> {
     private final Context context;
-    private final ArrayList<PhotoList> photoLists;
+    private ArrayList<PhotoList> photoLists;
     private ArrayList<Media> selected;
     private Boolean isEdit = false;
     private Callback callback;
@@ -40,6 +40,11 @@ public class PhotoListAdapter extends ArrayAdapter<PhotoList> {
         this.selected = new ArrayList<>();
         notifyDataSetChanged();
         if (callback != null) callback.onChange(this.selected);
+    }
+
+    public void setPhotoLists(ArrayList<PhotoList> photoLists) {
+        this.photoLists = photoLists;
+        notifyDataSetChanged();
     }
 
     public void setCallback(Callback callback) {

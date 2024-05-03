@@ -11,8 +11,8 @@ android {
         applicationId "com.example.memories"
         minSdk 27
         targetSdk 33
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -34,6 +34,14 @@ android {
                 srcDirs 'src/main/assets'
             }
         }
+    }
+
+    buildFeatures {
+        viewBinding true
+    }
+
+    configurations.all {
+        resolutionStrategy.force 'com.google.code.findbugs:jsr305:3.0.2'
     }
 }
 
@@ -59,5 +67,10 @@ dependencies {
     implementation 'com.github.naz013:ColorSlider:1.0.6'
     implementation("com.google.firebase:firebase-appcheck")
     implementation 'com.google.mlkit:object-detection:17.0.1'
+    implementation 'com.andrognito.patternlockview:patternlockview:1.0.0'
+    implementation 'life.knowledge4:k4l-video-trimmer:1.0'
+    implementation "com.github.krazykira:videffects:1.1.1"
+    implementation 'org.jcodec:jcodec:0.2.3'
+    implementation 'org.jcodec:jcodec-android:0.2.3'
 
 }

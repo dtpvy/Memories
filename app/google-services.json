@@ -31,6 +31,14 @@
           }
         },
         {
+          "client_id": "71523733950-hgkb224jlki2k6dpa9cmda9ngeutmpcd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.memories",
+            "certificate_hash": "d49facd80fb43dcde34fe2ec184d4d43a2c7fc2b"
+          }
+        },
+        {
           "client_id": "71523733950-te3cepku8nl32spkdco9gu34bgmoildm.apps.googleusercontent.com",
           "client_type": 3
         }

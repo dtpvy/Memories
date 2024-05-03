@@ -13,6 +13,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -23,12 +24,16 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.andrognito.patternlockview.PatternLockView;
+import com.andrognito.patternlockview.listener.PatternLockViewListener;
+import com.andrognito.patternlockview.utils.PatternLockUtils;
 import com.bumptech.glide.Glide;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
@@ -41,12 +46,13 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 public class AlbumActivity extends AppCompatActivity {
     ArrayList<Album> albums = new ArrayList<>();
     ArrayList<Album> selected = new ArrayList<>();;
-    ImageButton backBtn;
+    ImageButton backBtn, moreBtn;
     User user;
     RecyclerView albumView;
     ConstraintLayout albumControl;
@@ -54,10 +60,9 @@ public class AlbumActivity extends AppCompatActivity {
     AlbumAdapter albumHomeAdapter;
     AlertDialog removeDialog, editAlbumDialog;
     FirebaseStorage storage;
-    String editPath = "";
+    String editPath = "", password = "";
     ImageView imageView;
-    CollectionReference dbAlbum;
-    CollectionReference dbMedia;
+    CollectionReference dbAlbum, dbUser, dbMedia;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +74,7 @@ public class AlbumActivity extends AppCompatActivity {
         Database db = new Database();
         dbAlbum = db.getDbAlbum();
         dbMedia = db.getDbMedia();
+        dbUser = db.getDbUser();
 
         user = new User().getUser(this);
 
@@ -80,12 +86,13 @@ public class AlbumActivity extends AppCompatActivity {
         archiveBtn = findViewById(R.id.archiveAlbum);
         cancelBtn = findViewById(R.id.cancelAction);
         selectAllBtn = findViewById(R.id.selectAllAlbum);
+        moreBtn = findViewById(R.id.moreBtn);
 
         albumView = findViewById(R.id.albumList);
         GridLayoutManager albumLayoutManager = new GridLayoutManager(this, 3);
         albumView.setLayoutManager(albumLayoutManager);
 
-        loadData();
+        loadData("createdAt", Query.Direction.ASCENDING);
 
         backBtn = findViewById(R.id.backBtn);
         backBtn.setOnClickListener(new View.OnClickListener() {
@@ -130,7 +137,7 @@ public class AlbumActivity extends AppCompatActivity {
                 albumControl.setVisibility(View.INVISIBLE);
                 albumView.setPadding(0, 0, 0, 0);
                 albumHomeAdapter.setShowCheck(false);
-                loadData();
+                loadData("createdAt", Query.Direction.ASCENDING);
             }
         });
 
@@ -142,11 +149,18 @@ public class AlbumActivity extends AppCompatActivity {
                 editAlbumDialog.show();
             }
         });
+
+        moreBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showSort();
+            }
+        });
     }
 
-    public void loadData() {
+    public void loadData(String field, Query.Direction direction) {
         albums = new ArrayList<>();
-        dbAlbum.whereEqualTo("userId", user.getId()).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+        dbAlbum.whereEqualTo("userId", user.getId()).orderBy(field, direction).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
                 if (task.isSuccessful()) {
@@ -183,6 +197,17 @@ public class AlbumActivity extends AppCompatActivity {
                             editBtn.setEnabled(selected.size() == 1);
                             editBtn.setBackgroundResource(selected.size() == 1 ? R.color.white : R.color.border);
                         }
+
+                        @Override
+                        public void onClick(Album album) {
+                            if (album.getId().compareTo(user.getPrivateAlbum().getId()) == 0) {
+                                showPassword();
+                            } else {
+                                Intent intent = new Intent(AlbumActivity.this, PhotoActivity.class);
+                                intent.putExtra("album_id", album.getId());
+                                AlbumActivity.this.startActivity(intent);
+                            }
+                        }
                     });
                     albumView.setAdapter(albumHomeAdapter);
                 }
@@ -206,7 +231,7 @@ public class AlbumActivity extends AppCompatActivity {
                         albumControl.setVisibility(View.INVISIBLE);
                         albumView.setPadding(0, 0, 0, 0);
                         albumHomeAdapter.setShowCheck(false);
-                        loadData();
+                        loadData("createdAt", Query.Direction.ASCENDING);
                     }
                 })
                 .setNegativeButton("Huỷ", new DialogInterface.OnClickListener() {
@@ -328,7 +353,7 @@ public class AlbumActivity extends AppCompatActivity {
                     dialog.dismiss();
                     dbAlbum.document(selected.get(0).getId()).update("name", nameInput.getText().toString());
                     dbAlbum.document(selected.get(0).getId()).update("imgUrl", editPath);
-                    loadData();
+                    loadData("createdAt", Query.Direction.ASCENDING);
 
                     albumControl.setVisibility(View.INVISIBLE);
                     albumView.setPadding(0, 0, 0, 0);
@@ -349,5 +374,111 @@ public class AlbumActivity extends AppCompatActivity {
         });
 
         return dialog;
+    }
+
+    public void showSort() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(AlbumActivity.this);
+        builder.setTitle("Sắp xếp");
+        LayoutInflater inflater = this.getLayoutInflater();
+        View view = inflater.inflate(R.layout.sort_bottom_sheet, null);
+        AlertDialog dialog = builder.setView(view).create();
+
+        TextView nameAsc = view.findViewById(R.id.nameAsc);
+        TextView nameDesc = view.findViewById(R.id.nameDesc);
+        TextView dateAsc = view.findViewById(R.id.dateAsc);
+        TextView dateDesc = view.findViewById(R.id.dateDesc);
+
+        nameAsc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                loadData("name", Query.Direction.ASCENDING);
+            }
+        });
+
+        nameDesc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                loadData("name", Query.Direction.DESCENDING);
+            }
+        });
+
+        dateAsc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                loadData("createdAt", Query.Direction.ASCENDING);
+            }
+        });
+
+        dateDesc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                loadData("createdAt", Query.Direction.DESCENDING);
+            }
+        });
+
+
+        dialog.show();
+        dialog.getWindow().setGravity(Gravity.BOTTOM);
+    }
+
+    public void showPassword() {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        LayoutInflater inflater = this.getLayoutInflater();
+        View view = inflater.inflate(R.layout.private_album, null);
+        android.app.AlertDialog dialog = builder.setView(view).create();
+        Boolean hasPassword = user.getPassword() != null;
+        dialog.setTitle(hasPassword ? "Nhập mật khẩu" : "Nhập mật khẩu mới");
+
+        PatternLockView mPatternLockView = view.findViewById(R.id.pattern_lock_view);
+        mPatternLockView.addPatternLockListener(new PatternLockViewListener() {
+            @Override
+            public void onStarted() {}
+
+            @Override
+            public void onProgress(List<PatternLockView.Dot> progressPattern) {}
+
+            @Override
+            public void onComplete(List<PatternLockView.Dot> pattern) {
+                String value = PatternLockUtils.patternToString(mPatternLockView, pattern);
+                if (!hasPassword && password.length() == 0) {
+                    password = value;
+                    dialog.setTitle("Xác nhận mật khẩu");
+                    mPatternLockView.clearPattern();
+                } else if (!hasPassword) {
+                    if (password.compareTo(value) != 0) {
+                        mPatternLockView.setViewMode(PatternLockView.PatternViewMode.WRONG);
+                    } else {
+                        user.setPassword(value);
+                        dbUser.document(user.getId()).update("password", value);
+                        Intent intent = new Intent(AlbumActivity.this, PhotoActivity.class);
+                        intent.putExtra("album_id", user.getPrivateAlbum().getId());
+                        AlbumActivity.this.startActivity(intent);
+                        dialog.dismiss();
+                    }
+                } else {
+                    if (user.getPassword().compareTo(value) != 0) {
+                        mPatternLockView.setViewMode(PatternLockView.PatternViewMode.WRONG);
+                    } else {
+                        Intent intent = new Intent(AlbumActivity.this, PhotoActivity.class);
+                        intent.putExtra("album_id", user.getPrivateAlbum().getId());
+                        AlbumActivity.this.startActivity(intent);
+                        dialog.dismiss();
+                    }
+                }
+            }
+            @Override
+            public void onCleared() {
+
+            }
+        });
+
+        dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialogInterface) {
+                password = "";
+            }
+        });
+
+        dialog.show();
     }
 }

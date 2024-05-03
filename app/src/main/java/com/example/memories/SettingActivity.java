@@ -3,14 +3,18 @@ package com.example.memories;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ContentResolver;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.provider.Settings;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -18,7 +22,11 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.andrognito.patternlockview.PatternLockView;
+import com.andrognito.patternlockview.listener.PatternLockViewListener;
+import com.andrognito.patternlockview.utils.PatternLockUtils;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.Initializable;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
@@ -48,11 +56,11 @@ public class SettingActivity extends AppCompatActivity {
     FirebaseAuth firebaseAuth;
     FirebaseStorage storage;
     GoogleSignInClient googleSignInClient;
-    LinearLayout signOutBtn, trashBtn, syncBtn;
+    LinearLayout signOutBtn, trashBtn, syncBtn, privateAlbumBtn;
     ImageView avatarView;
     TextView fullNameText, emailText;
     ImageButton backButton;
-    String imageEncoded, deviceId;
+    String imageEncoded, deviceId, password = "", confirmPassword = "";
     int fileNumber = 0;
     History history;
     User user;
@@ -86,6 +94,7 @@ public class SettingActivity extends AppCompatActivity {
         avatarView = findViewById(R.id.avatarView);
         backButton = findViewById(R.id.backButton);
         syncBtn = findViewById(R.id.syncBtn);
+        privateAlbumBtn = findViewById(R.id.privateAlbum);
 
         if (firebaseUser != null) {
             Glide.with(this).load(firebaseUser.getPhotoUrl()).into(avatarView);
@@ -128,6 +137,13 @@ public class SettingActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 chooseImages();
+            }
+        });
+
+        privateAlbumBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showPassword();
             }
         });
     }
@@ -248,5 +264,68 @@ public class SettingActivity extends AppCompatActivity {
         }
 
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    public void showPassword() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = this.getLayoutInflater();
+        View view = inflater.inflate(R.layout.private_album, null);
+        AlertDialog dialog = builder.setView(view).create();
+        Boolean hasPassword = user.getPassword() != null;
+        dialog.setTitle(hasPassword ? "Nhập mật khẩu" : "Nhập mật khẩu mới");
+
+        PatternLockView mPatternLockView = view.findViewById(R.id.pattern_lock_view);
+        mPatternLockView.addPatternLockListener(new PatternLockViewListener() {
+            @Override
+            public void onStarted() {
+
+            }
+
+            @Override
+            public void onProgress(List<PatternLockView.Dot> progressPattern) {
+
+            }
+
+            @Override
+            public void onComplete(List<PatternLockView.Dot> pattern) {
+                String value = PatternLockUtils.patternToString(mPatternLockView, pattern);
+                if (!hasPassword && password.length() == 0) {
+                    password = value;
+                    dialog.setTitle("Xác nhận mật khẩu");
+                    mPatternLockView.clearPattern();
+                } else if (!hasPassword) {
+                    if (password.compareTo(value) != 0) {
+                        mPatternLockView.setViewMode(PatternLockView.PatternViewMode.WRONG);
+                    } else {
+                        user.setPassword(value);
+                        dbUser.document(user.getId()).update("password", value);
+                        Intent intent = new Intent(SettingActivity.this, PhotoActivity.class);
+                        intent.putExtra("album_id", user.getPrivateAlbum().getId());
+                        SettingActivity.this.startActivity(intent);
+                        dialog.dismiss();
+                    }
+                } else {
+                    if (user.getPassword().compareTo(value) != 0) {
+                        mPatternLockView.setViewMode(PatternLockView.PatternViewMode.WRONG);
+                    } else {
+                        Intent intent = new Intent(SettingActivity.this, PhotoActivity.class);
+                        intent.putExtra("album_id", user.getPrivateAlbum().getId());
+                        SettingActivity.this.startActivity(intent);
+                        dialog.dismiss();
+                    }
+                }
+            }
+            @Override
+            public void onCleared() {}
+        });
+
+        dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialogInterface) {
+                password = "";
+            }
+        });
+
+        dialog.show();
     }
 }
