@@ -112,11 +112,11 @@ public class VideoEditorActivity extends AppCompatActivity {
         saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (files.size() == 0) {
+                if (files.isEmpty()) {
                     FirebaseStorage storage = FirebaseStorage.getInstance();
                     StorageReference storageRef = storage.getReference();
 
-                    Media newMedia = new Media(user.getId(), new Date(), media.getType());
+                    Media newMedia = new Media(user.getId(), new Date());
                     String childPath = user.getId() + "/" + newMedia.getId() + ".mp4";
                     StorageReference videoRef = storageRef.child(childPath);
 
@@ -137,6 +137,7 @@ public class VideoEditorActivity extends AppCompatActivity {
                                 uploadTask.addOnSuccessListener(taskSnapshot -> {
                                     videoRef.getDownloadUrl().addOnSuccessListener(uri -> {
                                         newMedia.setImgUrl(uri.toString());
+                                        newMedia.setType(media.getType());
                                         dbMedia.document(newMedia.getId()).set(newMedia);
                                         dbAlbum.document(albumId).update("photos", FieldValue.arrayUnion(newMedia));
                                         Intent intent = new Intent(VideoEditorActivity.this, VideoActivity.class);
@@ -178,21 +179,19 @@ public class VideoEditorActivity extends AppCompatActivity {
 
     public String getMimeType(Uri uri) {
         ContentResolver cR = getContentResolver();
-        String mime = cR.getType(uri);
-        return mime;
+        return cR.getType(uri);
     }
 
     public void uploadFile(Uri uri) throws FileNotFoundException {
         StorageReference storageRef = storage.getReference();
 
-        UUID uuid = UUID.randomUUID();
-        String childPath = user.getId() + "/" + uuid.toString() + ".mp4";
+        Media newMedia = new Media(user.getId(), new Date());
+        String childPath = user.getId() + "/" + newMedia.getId() + ".mp4";
         StorageReference mountainsRef = storageRef.child(childPath);
 
         InputStream stream = getContentResolver().openInputStream(uri);
         UploadTask uploadTask = mountainsRef.putStream(stream);
 
-        Media newMedia = new Media(user.getId(), new Date(), getMimeType(uri));
         uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
@@ -200,6 +199,7 @@ public class VideoEditorActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(Uri firebaseUri) {
                         newMedia.setImgUrl(firebaseUri.toString());
+                        newMedia.setType(getMimeType(uri));
                         dbMedia.document(newMedia.getId()).set(newMedia);
                         dbAlbum.document(albumId).update("photos", FieldValue.arrayUnion(newMedia));
                         Intent intent = new Intent(VideoEditorActivity.this, VideoActivity.class);

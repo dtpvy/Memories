@@ -126,6 +126,40 @@ public class HomeActivity extends AppCompatActivity {
         this.getObjects();
     }
 
+    public void calcDurations() {
+        ArrayList<String> durations = new ArrayList<>();
+        Utils utils = new Utils();
+        Thread thread = new Thread() {
+            @Override
+            public void run() {
+                for (int i = 0; i < media.size(); i++) {
+                    Media item = media.get(i);
+                    int index = i;
+                    if (!item.isVideo()) {
+                        durations.add("");
+                    } else {
+                        try {
+                            String time = utils.convertMillieToHMmSs(utils.getVideoDuration(item.getImgUrl(), getApplicationContext()));
+                            System.out.println(time);
+                            durations.add(time);
+                        } catch (Exception e) {
+                            System.out.println(e.getMessage());
+                            durations.add("00:00");
+                        }
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                photoHomeAdapter.setDuration(index, durations.get(index));
+                            }
+                        });
+                    }
+                }
+
+            };
+        };
+        thread.start();
+    }
+
     public void getPhotos(String field, Query.Direction direction) {
         media = new ArrayList<>();
         dbMedia.whereEqualTo("userId", user.getId()).whereEqualTo("deletedAt", null).orderBy(field, direction).get()
@@ -139,6 +173,7 @@ public class HomeActivity extends AppCompatActivity {
                             }
                             photoHomeAdapter.setData(media);
                             totalPhoto.setText(media.size() + " photos");
+                            calcDurations();
                         }
                     }
                 });
@@ -256,6 +291,7 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 getPhotos("id", Query.Direction.ASCENDING);
+                dialog.dismiss();
             }
         });
 
@@ -263,6 +299,7 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 getPhotos("id", Query.Direction.DESCENDING);
+                dialog.dismiss();
             }
         });
 
@@ -270,6 +307,7 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 getPhotos("createdAt", Query.Direction.ASCENDING);
+                dialog.dismiss();
             }
         });
 
@@ -277,6 +315,7 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 getPhotos("createdAt", Query.Direction.DESCENDING);
+                dialog.dismiss();
             }
         });
 

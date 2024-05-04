@@ -54,7 +54,6 @@ public class FilterVideoActivity extends AppCompatActivity {
         mMediaPlayer = new MediaPlayer();
 
         try {
-//            mMediaPlayer.setDataSource(url);
             File myAssetFile = new File(url);
             afd = new AssetFileDescriptor(ParcelFileDescriptor.open(myAssetFile, ParcelFileDescriptor.MODE_READ_ONLY), 0L, myAssetFile.length());
             mMediaPlayer.setDataSource(afd.getFileDescriptor(),

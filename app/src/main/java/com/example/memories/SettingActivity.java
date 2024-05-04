@@ -56,7 +56,7 @@ public class SettingActivity extends AppCompatActivity {
     FirebaseAuth firebaseAuth;
     FirebaseStorage storage;
     GoogleSignInClient googleSignInClient;
-    LinearLayout signOutBtn, trashBtn, syncBtn, privateAlbumBtn;
+    LinearLayout signOutBtn, trashBtn, syncBtn, privateAlbumBtn, analyticsBtn;
     ImageView avatarView;
     TextView fullNameText, emailText;
     ImageButton backButton;
@@ -95,6 +95,7 @@ public class SettingActivity extends AppCompatActivity {
         backButton = findViewById(R.id.backButton);
         syncBtn = findViewById(R.id.syncBtn);
         privateAlbumBtn = findViewById(R.id.privateAlbum);
+        analyticsBtn = findViewById(R.id.analyticsBtn);
 
         if (firebaseUser != null) {
             Glide.with(this).load(firebaseUser.getPhotoUrl()).into(avatarView);
@@ -123,6 +124,14 @@ public class SettingActivity extends AppCompatActivity {
                 intent.putExtra("album_id", "trash");
                 SettingActivity.this.startActivity(intent);
                 finish();
+            }
+        });
+
+        analyticsBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(SettingActivity.this, AnalyticsActivity.class);
+                SettingActivity.this.startActivity(intent);
             }
         });
 
@@ -200,14 +209,13 @@ public class SettingActivity extends AppCompatActivity {
     public void uploadFile(Uri uri) throws FileNotFoundException {
         StorageReference storageRef = storage.getReference();
 
-        UUID uuid = UUID.randomUUID();
-        String childPath = user.getId() + "/" + uuid.toString() + "-" + getName(uri.getPath());
+        Media newMedia = new Media(user.getId(), history.getDate(), history.getId(), getMimeType(uri));
+        String childPath = user.getId() + "/" + newMedia.getId() + "-" + getName(uri.getPath());
         StorageReference mountainsRef = storageRef.child(childPath);
 
         InputStream stream = getContentResolver().openInputStream(uri);
         UploadTask uploadTask = mountainsRef.putStream(stream);
 
-        Media newMedia = new Media(user.getId(), history.getDate(), history.getId(), getMimeType(uri));
         uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
@@ -221,7 +229,22 @@ public class SettingActivity extends AppCompatActivity {
                             customObject.add(new CustomObject(uri, newMedia));
                         }
                         if (media.size() == fileNumber) {
-                            createObject();
+                            if (customObject.isEmpty()) {
+                                dbAlbum.document(user.getDefaultAlbum().getId()).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                                    @Override
+                                    public void onSuccess(DocumentSnapshot documentSnapshot) {
+                                        Album album = documentSnapshot.toObject(Album.class);
+                                        ArrayList<Media> newMedia = album.getPhotos();
+                                        for (Media media : SettingActivity.this.media) {
+                                            newMedia.add(media);
+                                        }
+                                        dbAlbum.document(user.getDefaultAlbum().getId()).update("photos", newMedia);
+                                        Toast.makeText(SettingActivity.this, "Cập nhật thành công!", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            } else {
+                                createObject();
+                            }
                         }
                     }
                 });
