@@ -6,10 +6,15 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
+import android.media.MediaFormat;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -29,15 +34,27 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.google.gson.Gson;
+import com.homesoft.encoder.Mp4FrameMuxer;
+import com.homesoft.encoder.Muxer;
+import com.homesoft.encoder.MuxerConfig;
+import com.homesoft.encoder.MuxingCompletionListener;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -56,13 +73,16 @@ public class PhotoActivity extends AppCompatActivity {
     User user;
     ListView listView;
     ConstraintLayout photoControl;
-    LinearLayout addBtn, trashBtn, downBtn, restoreBtn, deleteBtn, shareBtn;
+    LinearLayout addBtn, trashBtn, downBtn, restoreBtn, deleteBtn, shareBtn, creativeBtn;
     Boolean isEdit = false;
     PhotoListAdapter photoListAdapter;
     String albumId, password = "";
     ImageAction imageAction;
     CollectionReference dbAlbum, dbMedia, dbUser;
     Boolean isAsc = true;
+    String[] ratio = {"854 : 480", "1024 : 576", "1280 : 720", "800 : 600", "600 : 600"};
+    int[] widths = {854, 1024, 1280, 800, 600};
+    int[] heights = {480, 576, 720, 600, 600};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +105,7 @@ public class PhotoActivity extends AppCompatActivity {
         chooseText = findViewById(R.id.chooseText);
         shareBtn = findViewById(R.id.sharePhoto);
         editBtn = findViewById(R.id.editPassword);
+        creativeBtn = findViewById(R.id.creativeBtn);
 
         if (user.getPrivateAlbum().getId().compareTo(albumId) == 0) {
             editBtn.setVisibility(View.VISIBLE);
@@ -205,6 +226,13 @@ public class PhotoActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 showSort();
+            }
+        });
+
+        creativeBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onCreateDialog();
             }
         });
     }
@@ -489,6 +517,130 @@ public class PhotoActivity extends AppCompatActivity {
             }
         });
 
+        dialog.show();
+    }
+
+    public void createVideo(ArrayList<Bitmap> bitmaps, int width, int height) {
+        String path = "/storage/emulated/0/Download/" + new Date().getTime() + ".mp4";
+        File file = new File(path);
+        MuxerConfig muxerConfig = new MuxerConfig(file, width, height, MediaFormat.MIMETYPE_VIDEO_AVC, 3, 1F, 10000000, new Mp4FrameMuxer(file.getPath(), 1F), 1);
+        Muxer muxer = new Muxer(this, muxerConfig);
+        muxer.setOnMuxingCompletedListener(new MuxingCompletionListener() {
+            @Override
+            public void onVideoSuccessful(@NonNull File file) {
+                System.out.println(file.getPath());
+                try {
+                    uploadFile(file);
+                } catch (FileNotFoundException e) {
+                    System.out.println(e.getMessage());
+                    file.delete();
+                }
+            }
+
+            @Override
+            public void onVideoError(@NonNull Throwable throwable) {
+
+            }
+        });
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                muxer.mux(bitmaps, R.raw.bensound_happyrock);
+            }
+        }).start();
+    }
+
+    public void uploadFile(File file) throws FileNotFoundException {
+        StorageReference storageRef = FirebaseStorage.getInstance().getReference();
+
+        Uri uri = Uri.fromFile(file);
+
+        Media newMedia = new Media(user.getId(), new Date());
+        String childPath = user.getId() + "/" + newMedia.getId() + ".mp4";
+        StorageReference mountainsRef = storageRef.child(childPath);
+
+        InputStream stream = getContentResolver().openInputStream(uri);
+        UploadTask uploadTask = mountainsRef.putStream(stream);
+
+        uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                taskSnapshot.getMetadata().getReference().getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                    @Override
+                    public void onSuccess(Uri firebaseUri) {
+                        newMedia.setImgUrl(firebaseUri.toString());
+                        newMedia.setType("video/mp4");
+                        dbMedia.document(newMedia.getId()).set(newMedia);
+                        dbAlbum.document(albumId).update("photos", FieldValue.arrayUnion(newMedia));
+                        Intent intent = new Intent(PhotoActivity.this, VideoActivity.class);
+                        intent.putExtra("media_id", newMedia.getId());
+                        intent.putExtra("album_id", albumId);
+                        Toast.makeText(PhotoActivity.this, "Save successfully!", Toast.LENGTH_LONG);
+                        PhotoActivity.this.startActivity(intent);
+                        file.delete();
+                    }
+                });
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                System.out.println(e.getMessage());
+            }
+        });
+    }
+
+    public void creativeVideo(int newWidth, int newHeight) {
+        ArrayList<Bitmap> bitmaps = new ArrayList<>(Collections.nCopies(selected.size(), null));
+        for (int i = 0; i < selected.size(); i++) {
+            int index = i;
+            Glide.with(this)
+                    .asBitmap()
+                    .load(selected.get(i).getImgUrl())
+                    .into(new CustomTarget<Bitmap>() {
+                        @Override
+                        public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                            int width = resource.getWidth();
+                            int height = resource.getHeight();
+
+                            float scaleWidth = ((float) newWidth) / width;
+                            float scaleHeight = ((float) newHeight) / height;
+                            float scaleFactor = Math.min(scaleWidth, scaleHeight);
+                            android.graphics.Matrix matrix = new android.graphics.Matrix();
+                            matrix.postScale(scaleFactor, scaleFactor);
+                            Bitmap bitmap = Bitmap.createBitmap(resource, 0, 0, width, height, matrix, true);
+
+                            Bitmap newBitmap = Bitmap.createBitmap(newWidth, newHeight, Bitmap.Config.ARGB_8888);
+                            Canvas canvas = new Canvas(newBitmap);
+                            canvas.drawColor(Color.BLACK);
+                            int left = (newWidth - bitmap.getWidth()) / 2;
+                            int top = (newHeight - bitmap.getHeight()) / 2;
+                            canvas.drawBitmap(bitmap, left, top, new Paint());
+
+                            bitmaps.set(index, newBitmap);
+                            if (index + 1 == selected.size()) {
+                                createVideo(bitmaps, newWidth, newHeight);
+                            }
+                        }
+
+                        @Override
+                        public void onLoadCleared(@Nullable Drawable placeholder) {
+
+                        }
+                    });
+        }
+    }
+
+    public void onCreateDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Chọn tỉ lệ")
+                .setItems(ratio, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        creativeVideo(widths[which], heights[which]);
+                        dialog.dismiss();
+//                        onChangeMode(false);
+                    }
+                });
+        Dialog dialog = builder.create();
         dialog.show();
     }
 }

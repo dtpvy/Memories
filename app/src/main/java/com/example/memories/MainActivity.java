@@ -6,6 +6,8 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 
 import android.content.Context;
 import android.content.Intent;
@@ -32,6 +34,8 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
     Button button;
@@ -96,6 +100,8 @@ public class MainActivity extends AppCompatActivity {
         if (auth.getCurrentUser() != null) {
             this.login();
         }
+
+        scheduleNotificationWorker();
     }
 
     public void login() {
@@ -143,5 +149,15 @@ public class MainActivity extends AppCompatActivity {
                 MainActivity.this.finish();
             }
         });
+    }
+
+    private void scheduleNotificationWorker() {
+        PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(
+                NotificationWorker.class,
+                1,
+                TimeUnit.DAYS)
+                .build();
+
+        WorkManager.getInstance(this).enqueue(workRequest);
     }
 }

@@ -159,6 +159,7 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/analyticsBtn"
                 android:clickable="true"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

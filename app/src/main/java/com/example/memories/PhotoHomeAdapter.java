@@ -1,6 +1,7 @@
 package com.example.memories;
 
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
@@ -17,22 +18,34 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class PhotoHomeAdapter extends RecyclerView.Adapter<PhotoHomeAdapter.ViewHolder> {
     ArrayList<Media> media;
     Context context;
-    Utils utils = new Utils();
-    Handler handlerInMainThread;
+    ArrayList<String> durationTimes;
 
     public PhotoHomeAdapter(Context context) {
         this.context = context;
         this.media = new ArrayList<>();
-        this.handlerInMainThread = new Handler(context.getMainLooper());
+        this.durationTimes = new ArrayList<>();
     }
 
     public PhotoHomeAdapter(Context context, ArrayList<Media> media) {
         this.context = context;
         this.media = media;
+        this.durationTimes = new ArrayList<>();
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    public void setDurations(ArrayList<String> durations) {
+        this.durationTimes = durations;
+        notifyDataSetChanged();
+    }
+
+    public void setDuration(int position, String time) {
+        this.durationTimes.set(position, time);
+        notifyItemChanged(position);
     }
 
     @NonNull
@@ -42,8 +55,10 @@ public class PhotoHomeAdapter extends RecyclerView.Adapter<PhotoHomeAdapter.View
         return new ViewHolder(view);
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     public void setData(ArrayList<Media> media) {
         this.media = media;
+        this.durationTimes = new ArrayList<>(Collections.nCopies(media.size(), "00:00"));
         notifyDataSetChanged();
     }
 
@@ -56,15 +71,10 @@ public class PhotoHomeAdapter extends RecyclerView.Adapter<PhotoHomeAdapter.View
         if (m.getType().contains("video")) {
             holder.video.setVisibility(View.VISIBLE);
             holder.time.setVisibility(View.VISIBLE);
-            Runnable calcDuration = new Runnable() {
-                @Override
-                public void run() {
-                    String durations= utils.convertMillieToHMmSs(utils.getVideoDuration(imageUrl, context));
-                    holder.timeText.setText(durations);
-                }
-            };
 
-            handlerInMainThread.post(calcDuration);
+            if (!durationTimes.isEmpty()) {
+                holder.timeText.setText(durationTimes.get(position));
+            }
         } else {
             holder.video.setVisibility(View.INVISIBLE);
             holder.time.setVisibility(View.INVISIBLE);
